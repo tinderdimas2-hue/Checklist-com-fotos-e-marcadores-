@@ -3,35 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Checklist Automotivo - Áreas Customizáveis</title>
+    <title>Checklist Automotivo - Múltiplas Áreas e PDF</title>
+    <!-- html2pdf CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: system-ui, 'Segoe UI', Roboto; background: #f1f5f9; padding: 0; width: 100%; }
         .app-container { width: 100%; max-width: 100%; background: white; overflow-x: hidden; }
         .header { padding: 20px 16px 12px; background: white; border-bottom: 1px solid #e2e8f0; }
         h1 { font-size: 1.6rem; font-weight: 700; background: linear-gradient(135deg, #1e293b, #3b82f6); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 12px; }
-        .model-selector { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; -webkit-overflow-scrolling: touch; }
-        .model-btn { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; background: #f1f5f9; border: 2px solid transparent; border-radius: 16px; padding: 8px 12px; cursor: pointer; gap: 6px; min-width: 80px; }
+        .model-selector { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+        .model-btn { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; background: #f1f5f9; border: 2px solid transparent; border-radius: 16px; padding: 8px 12px; cursor: pointer; gap: 6px; min-width: 80px; transition: 0.1s; }
         .model-btn.active { background: #dbeafe; border-color: #3b82f6; }
         .model-icon { width: 48px; height: 48px; object-fit: contain; }
         .model-name { font-size: 0.7rem; font-weight: 500; color: #334155; }
         .sub { color: #dc2626; font-size: 0.75rem; margin-top: 8px; text-align: center; font-weight: 500; background: #fee2e2; padding: 6px; border-radius: 40px; }
         .main-area, .custom-areas { padding: 16px; background: #f8fafc; }
-        .image-block { background: #f8fafc; border-radius: 24px; padding: 16px; margin-bottom: 24px; border: 1px solid #e2e8f0; }
+        .image-block { background: #ffffff; border-radius: 24px; padding: 16px; margin-bottom: 24px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
         .image-container { background: #eef2ff; border-radius: 20px; overflow: hidden; border: 1px solid #e2e8f0; }
         .image-wrapper { position: relative; width: 100%; }
         #vehicleImage, .angle-img { width: 100%; height: auto; display: block; cursor: crosshair; user-select: none; }
-        .marker { position: absolute; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 15px; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.3); cursor: pointer; transform: translate(-50%, -50%); box-shadow: 0 3px 10px rgba(0,0,0,0.25); z-index: 20; border: 2.5px solid white; }
+        .marker { position: absolute; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 15px; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.3); cursor: pointer; transform: translate(-50%, -50%); box-shadow: 0 3px 10px rgba(0,0,0,0.25); z-index: 20; border: 2.5px solid white; transition: transform 0.05s; }
         .marker:active { transform: translate(-50%, -50%) scale(1.05); }
-        .action-buttons { padding: 8px 16px 4px; display: flex; gap: 12px; }
-        button { flex: 1; padding: 12px 16px; font-size: 0.9rem; font-weight: 600; border: none; border-radius: 60px; cursor: pointer; background: #f1f5f9; font-family: inherit; }
+        .action-buttons { padding: 8px 16px 16px; display: flex; gap: 12px; flex-wrap: wrap; }
+        button { padding: 12px 16px; font-size: 0.9rem; font-weight: 600; border: none; border-radius: 60px; cursor: pointer; background: #f1f5f9; font-family: inherit; transition: 0.1s; }
         button:active { transform: scale(0.96); }
         .btn-primary { background: #3b82f6; color: white; }
         .btn-danger { background: #ef4444; color: white; }
         .btn-secondary { background: #10b981; color: white; }
+        .btn-pdf { background: #f59e0b; color: white; }
         .block-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
         .block-title { font-weight: 700; font-size: 1.2rem; background: #e2e8f0; padding: 6px 14px; border-radius: 40px; }
-        .edit-title-btn { background: none; border: none; font-size: 1rem; cursor: pointer; padding: 4px 8px; }
+        .edit-title-btn, .delete-area-btn { background: none; border: none; font-size: 1rem; cursor: pointer; padding: 4px 8px; margin-left: 4px; border-radius: 30px; }
+        .edit-title-btn { background: #e2e8f0; }
+        .delete-area-btn { background: #fee2e2; color: #dc2626; }
         .photos-carousel { position: relative; width: 100%; display: flex; align-items: center; margin-bottom: 16px; }
         .carousel-track { flex: 1; overflow-x: auto; scroll-snap-type: x mandatory; display: flex; gap: 12px; padding: 8px 0; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
         .carousel-track::-webkit-scrollbar { height: 4px; }
@@ -41,16 +46,17 @@
         .photo-actions { display: flex; justify-content: flex-end; padding: 8px; gap: 8px; background: #f8fafc; }
         .photo-actions button { flex: none; padding: 6px 12px; font-size: 0.7rem; }
         .delete-photo-btn { background: #fee2e2; color: #dc2626; }
-        .carousel-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); border: none; border-radius: 40px; width: 36px; height: 36px; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 25; color: white; }
+        .carousel-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); border: none; border-radius: 40px; width: 36px; height: 36px; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 25; color: white; transition: 0.1s; }
+        .carousel-btn:active { background: rgba(0,0,0,0.8); }
         .prev-btn { left: 8px; }
         .next-btn { right: 8px; }
-        .markers-list { margin-top: 16px; background: white; border-radius: 20px; padding: 12px; }
+        .markers-list { margin-top: 16px; background: #fafcff; border-radius: 20px; padding: 12px; }
         .markers-list-title { font-weight: 600; margin-bottom: 8px; font-size: 0.9rem; color: #1e293b; }
         .observation-card { background: #ffffff; border-radius: 16px; padding: 12px; margin-bottom: 12px; border-left: 5px solid; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
         .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
         .color-badge { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 12px; }
         .marker-info { flex: 1; font-size: 0.8rem; color: #334155; }
-        .delete-marker-btn { background: #fee2e2; border: none; padding: 4px 10px; border-radius: 30px; color: #dc2626; font-weight: bold; }
+        .delete-marker-btn { background: #fee2e2; border: none; padding: 4px 10px; border-radius: 30px; color: #dc2626; font-weight: bold; cursor: pointer; }
         .observation-input { width: 100%; padding: 10px; border: 1.5px solid #e2e8f0; border-radius: 14px; font-family: inherit; resize: vertical; font-size: 0.85rem; }
         .empty-markers { text-align: center; color: #94a3b8; padding: 20px; font-size: 0.8rem; background: #f8fafc; border-radius: 16px; }
         .toast-message { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1e293bdd; backdrop-filter: blur(12px); color: white; padding: 10px 20px; border-radius: 60px; font-size: 0.85rem; opacity: 0; transition: 0.25s; pointer-events: none; z-index: 1000; white-space: nowrap; }
@@ -58,11 +64,27 @@
         .loading-overlay, .camera-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 2000; visibility: hidden; flex-direction: column; }
         .loading-overlay { background: rgba(0,0,0,0.5); color: white; font-size: 1.2rem; backdrop-filter: blur(4px); }
         .camera-modal { background: black; }
-        .camera-container { position: relative; width: 100%; max-width: 500px; background: black; border-radius: 20px; overflow: hidden; }
+        .camera-container { position: relative; width: 100%; max-width: 500px; background: black; border-radius: 20px; overflow: hidden; margin: 16px; }
         .camera-video { width: 100%; display: block; }
-        .camera-controls { display: flex; gap: 16px; justify-content: center; padding: 16px; background: #1e293b; }
+        .camera-controls { display: flex; gap: 16px; justify-content: center; padding: 16px; background: #1e293b; flex-wrap: wrap; }
         .camera-controls button { flex: none; padding: 12px 24px; }
-        @media (max-width: 550px) { .marker { width: 32px; height: 32px; font-size: 13px; } .carousel-btn { width: 32px; height: 32px; } }
+        @media (max-width: 550px) {
+            .marker { width: 32px; height: 32px; font-size: 13px; }
+            .carousel-btn { width: 32px; height: 32px; font-size: 1rem; }
+            .model-icon { width: 40px; height: 40px; }
+            .model-btn { min-width: 70px; padding: 6px 8px; }
+            .block-header { flex-direction: column; align-items: flex-start; }
+        }
+        @media print {
+            body { background: white; padding: 0; }
+            .header, .action-buttons, .model-selector, .carousel-btn, .photo-actions, .delete-marker-btn, .edit-title-btn, .delete-area-btn, .toast-message, .camera-modal, .loading-overlay { display: none; }
+            .image-block { break-inside: avoid; page-break-inside: avoid; border: none; box-shadow: none; margin-bottom: 20px; }
+            .marker { display: none; }
+            .observation-card { break-inside: avoid; }
+            .photo-card { flex: 0 0 100%; max-width: 100%; }
+            .carousel-track { overflow: visible; display: block; }
+            .photo-card { margin-bottom: 16px; }
+        }
     </style>
 </head>
 <body>
@@ -91,14 +113,15 @@
                     <img id="vehicleImage" src="https://i.imgur.com/kDPznwV.png" alt="Vista geral" style="width:100%">
                 </div>
             </div>
-            <div id="mainMarkersList" class="markers-list"></div>
+            <!-- ID corrigido para corresponder ao padrão markersList-${areaId} -->
+            <div id="markersList-main" class="markers-list"></div>
         </div>
     </div>
 
     <div class="action-buttons">
         <button id="addAreaBtn" class="btn-secondary">➕ Adicionar nova área</button>
+        <button id="generatePdfBtn" class="btn-pdf">📄 Gerar PDF</button>
         <button id="clearAllBtn" class="btn-danger">🗑️ Limpar tudo</button>
-        <button id="exportBtn" class="btn-primary">📋 Exportar</button>
     </div>
 
     <!-- ÂNGULOS FIXOS E ÁREAS CUSTOMIZADAS SERÃO INSERIDAS AQUI -->
@@ -125,28 +148,21 @@
         const COLOR_PALETTE = ['#EF4444','#3B82F6','#10B981','#F59E0B','#8B5CF6','#EC4899','#06B6D4','#F97316','#14B8A6','#A855F7','#D946EF','#84CC16'];
         const getColorForNumber = (n) => COLOR_PALETTE[(n-1) % COLOR_PALETTE.length];
 
-        // ---------- ESTRUTURA DE DADOS ----------
-        // photos: { areaId: [ { id, dataUrl, markersIds } ] }
-        // allMarkers: [ { id, number, x, y, color, note, areaId, areaNome, photoId } ]
-        // areas: array de objetos { id, nome, type } (type: 'main', 'fixed', 'custom')
         let photos = {};
         let allMarkers = [];
         let currentModel = 'suv';
         let currentStream = null;
         let pendingAreaId = null, pendingAreaNome = null;
 
-        // Definição dos ângulos fixos (serão carregados automaticamente)
         const fixedAreas = [
-            { id: 'lateralDireita', nome: '🚗 Lateral Direita', type: 'fixed' },
-            { id: 'lateralEsquerda', nome: '🚙 Lateral Esquerda', type: 'fixed' },
-            { id: 'frente', nome: '🔰 Frente', type: 'fixed' },
-            { id: 'tras', nome: '🔻 Traseira', type: 'fixed' },
-            { id: 'teto', nome: '☀️ Teto', type: 'fixed' },
-            { id: 'painel', nome: '📊 Painel', type: 'fixed' },
-            { id: 'interna', nome: '🪑 Interna (Bancos)', type: 'fixed' }
+            { id: 'lateralDireita', nome: '🚗 Lateral Direita' },
+            { id: 'lateralEsquerda', nome: '🚙 Lateral Esquerda' },
+            { id: 'frente', nome: '🔰 Frente' },
+            { id: 'tras', nome: '🔻 Traseira' },
+            { id: 'teto', nome: '☀️ Teto' },
+            { id: 'painel', nome: '📊 Painel' },
+            { id: 'interna', nome: '🪑 Interna (Bancos)' }
         ];
-
-        // Áreas customizadas (serão salvas)
         let customAreas = []; // { id, nome }
 
         const modelImages = {
@@ -158,7 +174,6 @@
             pickupcompacta: 'https://i.imgur.com/8rw1mWL.png'
         };
 
-        // ---------- UTILITÁRIOS ----------
         function showToast(msg, isErr = false) {
             const toast = document.getElementById('toastMsg');
             toast.textContent = isErr ? `⚠️ ${msg}` : `✅ ${msg}`;
@@ -197,90 +212,76 @@
                 const el = document.getElementById(`marker-${m.id}`);
                 if(el) { el.textContent = m.number; el.style.backgroundColor = m.color; }
             });
-            renderAllAreas(); // re-render completo para atualizar listas de marcadores
+            renderAllMarkersLists();
             saveAll();
         }
 
-        // ---------- PROCESSAMENTO DE IMAGEM (DATAURL) ----------
+        // Processamento de imagem (adicionar foto)
         function processImageDataUrl(dataUrl, areaId, areaNome) {
             const photoId = Date.now() + '-' + Math.random();
             const newPhoto = { id: photoId, dataUrl, markersIds: [] };
             if(!photos[areaId]) photos[areaId] = [];
             photos[areaId].push(newPhoto);
             saveAll();
-            renderArea(areaId, areaNome);
+            const scrollLeft = preserveCarouselScroll(areaId);
+            renderAreaCarousel(areaId, areaNome, scrollLeft);
+            renderMarkersList(areaId);
             showToast(`Foto adicionada em ${areaNome}`);
         }
 
-        // ---------- CÂMARA TRASEIRA (MODAL) ----------
+        function preserveCarouselScroll(areaId) {
+            const track = document.getElementById(`track-${areaId}`);
+            return track ? track.scrollLeft : 0;
+        }
+
+        // Câmera traseira
         async function openBackCamera(areaId, areaNome) {
             pendingAreaId = areaId;
             pendingAreaNome = areaNome;
             const modal = document.getElementById('cameraModal');
             const video = document.getElementById('cameraVideo');
-            if(currentStream) {
-                currentStream.getTracks().forEach(track => track.stop());
-                currentStream = null;
-            }
+            if(currentStream) { currentStream.getTracks().forEach(track => track.stop()); currentStream = null; }
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: "environment" }
-                });
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                 currentStream = stream;
                 video.srcObject = stream;
                 modal.style.visibility = 'visible';
             } catch (err) {
-                console.warn(err);
                 showToast('Câmera traseira não disponível. Usando câmera padrão.', true);
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                     currentStream = stream;
                     video.srcObject = stream;
                     modal.style.visibility = 'visible';
-                } catch (err2) {
-                    showToast('Não foi possível acessar nenhuma câmera.', true);
-                }
+                } catch (err2) { showToast('Não foi possível acessar nenhuma câmera.', true); }
             }
         }
-
         function closeCameraModal() {
             const modal = document.getElementById('cameraModal');
             const video = document.getElementById('cameraVideo');
-            if(currentStream) {
-                currentStream.getTracks().forEach(track => track.stop());
-                currentStream = null;
-            }
+            if(currentStream) { currentStream.getTracks().forEach(track => track.stop()); currentStream = null; }
             video.srcObject = null;
             modal.style.visibility = 'hidden';
-            pendingAreaId = null;
-            pendingAreaNome = null;
+            pendingAreaId = null; pendingAreaNome = null;
         }
-
         function capturePhoto() {
             const video = document.getElementById('cameraVideo');
-            if(!video.videoWidth || !video.videoHeight) {
-                showToast('Aguardando imagem da câmera...', true);
-                return;
-            }
+            if(!video.videoWidth || !video.videoHeight) { showToast('Aguardando imagem da câmera...', true); return; }
             const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
             if(pendingAreaId && pendingAreaNome) {
                 processImageDataUrl(dataUrl, pendingAreaId, pendingAreaNome);
                 closeCameraModal();
-            } else {
-                closeCameraModal();
-            }
+            } else { closeCameraModal(); }
         }
 
-        // ---------- GALERIA (FALLBACK) ----------
+        // Galeria
         function addNewPhotoFromGallery(areaId, areaNome) {
             const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
+            input.type = 'file'; input.accept = 'image/*';
             input.onchange = (e) => {
                 if(e.target.files && e.target.files[0]) {
                     showLoading(true);
@@ -319,11 +320,12 @@
             photos[areaId] = photos[areaId].filter(p => p.id !== photoId);
             if(photos[areaId].length === 0) delete photos[areaId];
             renumberMarkers();
-            renderArea(areaId, areaNome);
+            renderAreaCarousel(areaId, areaNome);
+            renderMarkersList(areaId);
             showToast(`Foto removida de ${areaNome}`);
         }
 
-        // ---------- MARCADORES (DOUBLE-TAP) ----------
+        // ---------- MARCADORES (DOUBLE-TAP sem recriar carrossel) ----------
         function addMarkerToPhoto(areaId, areaNome, photoId, xPercent, yPercent, wrapperElement) {
             const newId = Date.now() + Math.random() * 1000;
             const number = getNextNumber();
@@ -333,7 +335,7 @@
             createMarkerElement(newMarker, wrapperElement);
             const photoObj = photos[areaId]?.find(p => p.id === photoId);
             if(photoObj) { if(!photoObj.markersIds) photoObj.markersIds = []; photoObj.markersIds.push(newMarker.id); }
-            renderArea(areaId, areaNome); // re-render para atualizar lista de marcadores
+            renderMarkersList(areaId);
             saveAll();
             showToast(`Marcador #${number} em ${areaNome}`);
         }
@@ -368,9 +370,9 @@
             wrapper.appendChild(div);
         }
 
-        // Renderiza a lista de marcadores de uma área específica
-        function renderMarkersList(areaId, containerId) {
-            const container = document.getElementById(containerId);
+        // Renderiza a lista de observações de uma área (sem afetar carrossel)
+        function renderMarkersList(areaId) {
+            const container = document.getElementById(`markersList-${areaId}`);
             if(!container) return;
             const areaMarkers = allMarkers.filter(m => m.areaId === areaId).sort((a,b)=>a.number-b.number);
             if(areaMarkers.length === 0) {
@@ -387,7 +389,6 @@
                     <textarea class="observation-input" data-id="${m.id}" rows="2" placeholder="Descreva a avaria...">${escapeHtml(m.note)}</textarea>
                 </div>
             `).join('');
-            // eventos
             container.querySelectorAll('.delete-marker-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => { e.stopPropagation(); removeMarker(Number(btn.dataset.id)); });
             });
@@ -396,17 +397,77 @@
             });
         }
 
+        function renderAllMarkersLists() {
+            renderMarkersList('main');
+            fixedAreas.forEach(area => renderMarkersList(area.id));
+            customAreas.forEach(area => renderMarkersList(area.id));
+        }
+
         function escapeHtml(str) { return str?.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])) || ''; }
 
-        // ---------- RENDERIZAR UMA ÁREA (FIXA OU CUSTOM) ----------
-        function renderArea(areaId, areaNome) {
-            // Se for área principal, tratada separadamente
-            if(areaId === 'main') {
-                // A área principal já existe no HTML, só atualizamos a lista de marcadores
-                renderMarkersList('main', 'mainMarkersList');
-                return;
+        // Renderiza apenas o carrossel de uma área (sem recriar o bloco inteiro)
+        function renderAreaCarousel(areaId, areaNome, restoreScroll = 0) {
+            const block = document.getElementById(`block-${areaId}`);
+            if(!block) return;
+            const photoList = photos[areaId] || [];
+            const hasPhotos = photoList.length > 0;
+            const carouselDiv = block.querySelector('.photos-carousel');
+            if(!carouselDiv) return;
+            const savedScroll = (restoreScroll !== undefined) ? restoreScroll : (document.getElementById(`track-${areaId}`)?.scrollLeft || 0);
+            carouselDiv.innerHTML = `
+                <div class="carousel-track" id="track-${areaId}">
+                    ${hasPhotos ? photoList.map(photo => `
+                        <div class="photo-card">
+                            <div class="photo-wrapper" id="wrapper-${photo.id}"><img src="${photo.dataUrl}" class="angle-img"></div>
+                            <div class="photo-actions"><button class="delete-photo-btn" data-area="${areaId}" data-photo="${photo.id}">🗑️ Remover foto</button></div>
+                        </div>
+                    `).join('') : '<div class="photo-card"><div class="photo-placeholder">📸 Nenhuma foto.<br>Clique em "Câmera" ou "Galeria"</div></div>'}
+                </div>
+                ${hasPhotos ? `<button class="carousel-btn prev-btn" data-area="${areaId}">◀</button><button class="carousel-btn next-btn" data-area="${areaId}">▶</button>` : ''}
+            `;
+            const newTrack = document.getElementById(`track-${areaId}`);
+            if(newTrack && savedScroll) newTrack.scrollLeft = savedScroll;
+            
+            if(hasPhotos) {
+                photoList.forEach(photo => {
+                    const wrapper = document.getElementById(`wrapper-${photo.id}`);
+                    const img = wrapper?.querySelector('.angle-img');
+                    if(img) {
+                        let lastTap = 0;
+                        const doubleTapHandler = (e) => {
+                            const now = Date.now();
+                            if(now - lastTap < 300) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const rect = img.getBoundingClientRect();
+                                let x = ((e.clientX - rect.left)/rect.width)*100;
+                                let y = ((e.clientY - rect.top)/rect.height)*100;
+                                x = Math.min(100,Math.max(0,x)); y = Math.min(100,Math.max(0,y));
+                                addMarkerToPhoto(areaId, areaNome, photo.id, x, y, wrapper);
+                                lastTap = 0;
+                            } else { lastTap = now; }
+                        };
+                        img.addEventListener('click', doubleTapHandler);
+                    }
+                });
+                carouselDiv.querySelectorAll('.delete-photo-btn').forEach(btn => {
+                    btn.addEventListener('click', e => { e.stopPropagation(); deletePhoto(btn.dataset.area, btn.dataset.photo, areaNome); });
+                });
+                const track = document.getElementById(`track-${areaId}`);
+                const prev = carouselDiv.querySelector('.prev-btn');
+                const next = carouselDiv.querySelector('.next-btn');
+                if(prev) prev.addEventListener('click', () => track.scrollBy({ left: -track.clientWidth*0.9, behavior: 'smooth' }));
+                if(next) next.addEventListener('click', () => track.scrollBy({ left: track.clientWidth*0.9, behavior: 'smooth' }));
             }
-            // Verifica se o bloco já existe, senão cria
+            // recriar marcadores já existentes nas fotos
+            photoList.forEach(photo => {
+                const wrapper = document.getElementById(`wrapper-${photo.id}`);
+                if(wrapper) allMarkers.filter(m => m.photoId === photo.id).forEach(m => createMarkerElement(m, wrapper));
+            });
+        }
+
+        // Renderiza um bloco completo (header + carrossel + lista) - usado inicialmente e ao adicionar/remover áreas
+        function renderAreaBlock(areaId, areaNome, isCustom = false) {
             let block = document.getElementById(`block-${areaId}`);
             if(!block) {
                 block = document.createElement('div');
@@ -416,7 +477,6 @@
             }
             const photoList = photos[areaId] || [];
             const hasPhotos = photoList.length > 0;
-            const isCustom = customAreas.some(a => a.id === areaId);
             block.innerHTML = `
                 <div class="block-header">
                     <span class="block-title">${areaNome}</span>
@@ -427,76 +487,27 @@
                         ${isCustom ? `<button class="delete-area-btn" data-area="${areaId}" style="margin-left:4px; background:#ef4444; padding:4px 12px;">🗑️ Área</button>` : ''}
                     </div>
                 </div>
-                <div class="photos-carousel">
-                    <div class="carousel-track" id="track-${areaId}">
-                        ${hasPhotos ? photoList.map(photo => `
-                            <div class="photo-card">
-                                <div class="photo-wrapper" id="wrapper-${photo.id}"><img src="${photo.dataUrl}" class="angle-img"></div>
-                                <div class="photo-actions"><button class="delete-photo-btn" data-area="${areaId}" data-photo="${photo.id}">🗑️ Remover foto</button></div>
-                            </div>
-                        `).join('') : '<div class="photo-card"><div class="photo-placeholder">📸 Nenhuma foto.<br>Clique em "Câmera" ou "Galeria"</div></div>'}
-                    </div>
-                    ${hasPhotos ? `<button class="carousel-btn prev-btn" data-area="${areaId}">◀</button><button class="carousel-btn next-btn" data-area="${areaId}">▶</button>` : ''}
-                </div>
+                <div class="photos-carousel"></div>
                 <div id="markersList-${areaId}" class="markers-list"></div>
             `;
-            // Eventos dos botões
             block.querySelector('.take-photo-btn')?.addEventListener('click', () => openBackCamera(areaId, areaNome));
             block.querySelector('.add-photo-btn')?.addEventListener('click', () => addNewPhotoFromGallery(areaId, areaNome));
             if(isCustom) {
                 block.querySelector('.edit-title-btn')?.addEventListener('click', () => editAreaName(areaId));
                 block.querySelector('.delete-area-btn')?.addEventListener('click', () => deleteCustomArea(areaId));
             }
-            if(hasPhotos) {
-                photoList.forEach(photo => {
-                    const wrapper = document.getElementById(`wrapper-${photo.id}`);
-                    const img = wrapper.querySelector('.angle-img');
-                    let lastTap = 0;
-                    const doubleTapHandler = (e) => {
-                        const now = Date.now();
-                        if(now - lastTap < 300) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            const rect = img.getBoundingClientRect();
-                            let x = ((e.clientX - rect.left)/rect.width)*100;
-                            let y = ((e.clientY - rect.top)/rect.height)*100;
-                            x = Math.min(100,Math.max(0,x)); y = Math.min(100,Math.max(0,y));
-                            addMarkerToPhoto(areaId, areaNome, photo.id, x, y, wrapper);
-                            lastTap = 0;
-                        } else {
-                            lastTap = now;
-                        }
-                    };
-                    img.addEventListener('click', doubleTapHandler);
-                });
-                block.querySelectorAll('.delete-photo-btn').forEach(btn => {
-                    btn.addEventListener('click', e => { e.stopPropagation(); deletePhoto(btn.dataset.area, btn.dataset.photo, areaNome); });
-                });
-                const track = document.getElementById(`track-${areaId}`);
-                block.querySelector('.prev-btn')?.addEventListener('click', () => track.scrollBy({ left: -track.clientWidth*0.9, behavior: 'smooth' }));
-                block.querySelector('.next-btn')?.addEventListener('click', () => track.scrollBy({ left: track.clientWidth*0.9, behavior: 'smooth' }));
-            }
-            // Recarregar marcadores existentes na área (nos wrappers das fotos)
-            photoList.forEach(photo => {
-                const wrapper = document.getElementById(`wrapper-${photo.id}`);
-                if(wrapper) allMarkers.filter(m => m.photoId === photo.id).forEach(m => createMarkerElement(m, wrapper));
-            });
-            // Renderizar lista de marcadores da área
-            renderMarkersList(areaId, `markersList-${areaId}`);
+            renderAreaCarousel(areaId, areaNome);
+            renderMarkersList(areaId);
         }
 
         function renderAllAreas() {
             const container = document.getElementById('dynamicAreas');
             container.innerHTML = '';
-            // Renderizar ângulos fixos
-            fixedAreas.forEach(area => renderArea(area.id, area.nome));
-            // Renderizar áreas customizadas
-            customAreas.forEach(area => renderArea(area.id, area.nome));
-            // Atualizar área principal (vista geral)
-            renderMarkersList('main', 'mainMarkersList');
+            fixedAreas.forEach(area => renderAreaBlock(area.id, area.nome, false));
+            customAreas.forEach(area => renderAreaBlock(area.id, area.nome, true));
         }
 
-        // ---------- ÁREA PRINCIPAL (VISTA GERAL) - TRATAMENTO SEPARADO ----------
+        // Área principal (vista geral)
         function setupMainArea() {
             const mainImg = document.getElementById('vehicleImage');
             const mainWrapper = document.getElementById('mainImageWrapper');
@@ -522,45 +533,41 @@
                     const newMarker = { id: newId, number, x, y, color, note: '', areaId: 'main', areaNome: 'Vista Geral', photoId: 'main' };
                     allMarkers.push(newMarker);
                     createMarkerElement(newMarker, finalWrapper);
-                    renderMarkersList('main', 'mainMarkersList');
+                    renderMarkersList('main');
                     saveAll();
                     showToast(`Marcador #${number} na vista geral`);
                     lastTap = 0;
-                } else {
-                    lastTap = now;
-                }
+                } else { lastTap = now; }
             };
             finalImg.addEventListener('click', doubleTapHandler);
             allMarkers.filter(m => m.photoId === 'main').forEach(m => createMarkerElement(m, finalWrapper));
-            renderMarkersList('main', 'mainMarkersList');
+            renderMarkersList('main');
         }
 
-        // ---------- ÁREAS CUSTOMIZADAS ----------
+        // Áreas customizadas
         function addCustomArea() {
             const areaId = 'custom_' + Date.now();
             const areaNome = prompt('Nome da nova área (ex: Motor, Vazamento):', 'Nova área');
             if(!areaNome) return;
             customAreas.push({ id: areaId, nome: areaNome });
             saveAll();
-            renderAllAreas();
+            renderAreaBlock(areaId, areaNome, true);
             showToast(`Área "${areaNome}" adicionada`);
         }
-
         function editAreaName(areaId) {
             const area = customAreas.find(a => a.id === areaId);
             if(!area) return;
             const newNome = prompt('Editar nome:', area.nome);
             if(newNome) {
                 area.nome = newNome;
+                const titleSpan = document.querySelector(`#block-${areaId} .block-title`);
+                if(titleSpan) titleSpan.textContent = newNome;
                 saveAll();
-                renderAllAreas();
                 showToast(`Nome alterado para "${newNome}"`);
             }
         }
-
         function deleteCustomArea(areaId) {
             if(!confirm('Remover esta área e todas as suas fotos e marcadores?')) return;
-            // Remover fotos e marcadores
             const areaPhotos = photos[areaId] || [];
             areaPhotos.forEach(photo => {
                 photo.markersIds.forEach(mid => { const el = document.getElementById(`marker-${mid}`); if(el) el.remove(); });
@@ -569,11 +576,38 @@
             delete photos[areaId];
             customAreas = customAreas.filter(a => a.id !== areaId);
             saveAll();
-            renderAllAreas();
+            const block = document.getElementById(`block-${areaId}`);
+            if(block) block.remove();
             showToast('Área removida');
         }
 
-        // ---------- MODELOS, LIMPEZA, EXPORTAÇÃO ----------
+        // Gerar PDF
+        function generatePDF() {
+            const element = document.querySelector('.app-container').cloneNode(true);
+            const removals = element.querySelectorAll('.carousel-btn, .photo-actions button, .delete-marker-btn, .edit-title-btn, .delete-area-btn, .action-buttons, .model-selector, .sub, .toast-message, .camera-modal, .loading-overlay');
+            removals.forEach(el => el.remove());
+            element.querySelectorAll('.carousel-track').forEach(track => {
+                track.style.overflow = 'visible';
+                track.style.display = 'block';
+            });
+            element.querySelectorAll('.photo-card').forEach(card => {
+                card.style.flex = 'none';
+                card.style.marginBottom = '16px';
+            });
+            const opt = {
+                margin: [0.5, 0.5, 0.5, 0.5],
+                filename: 'checklist_automotivo.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+            showToast('Gerando PDF, aguarde...');
+            setTimeout(() => {
+                html2pdf().set(opt).from(element).save().then(() => showToast('PDF gerado com sucesso!'));
+            }, 100);
+        }
+
+        // Modelo, limpeza
         function switchModel(modelId) {
             currentModel = modelId;
             const mainImg = document.getElementById('vehicleImage');
@@ -584,30 +618,18 @@
                 else btn.classList.remove('active');
             });
         }
-
         function clearAll() {
             if(allMarkers.length === 0 && Object.keys(photos).length === 0 && customAreas.length === 0) return;
             if(confirm('Remover TODOS os marcadores, fotos e áreas personalizadas?')) {
                 allMarkers.forEach(m => { const el = document.getElementById(`marker-${m.id}`); if(el) el.remove(); });
-                allMarkers = [];
-                photos = {};
-                customAreas = [];
+                allMarkers = []; photos = {}; customAreas = [];
                 saveAll();
                 renderAllAreas();
-                setupMainArea(); // recria área principal
+                setupMainArea();
                 showToast('Checklist completamente resetado');
             }
         }
 
-        function exportAll() {
-            if(allMarkers.length === 0) { showToast('Nenhum ponto para exportar', true); return; }
-            const sorted = [...allMarkers].sort((a,b)=>a.number-b.number);
-            let text = '=== CHECKLIST AUTOMOTIVO ===\n\n';
-            sorted.forEach(m => { text += `[${m.number}] ${m.areaNome}\n📝 Obs: ${m.note || '(vazio)'}\n📍 Pos: (${Math.round(m.x)}%, ${Math.round(m.y)}%)\n---\n`; });
-            navigator.clipboard.writeText(text).then(() => showToast('Checklist copiado')).catch(() => alert(text));
-        }
-
-        // ---------- INICIALIZAÇÃO ----------
         function init() {
             loadAll();
             setupMainArea();
@@ -616,8 +638,7 @@
             switchModel(currentModel);
             document.getElementById('addAreaBtn').addEventListener('click', addCustomArea);
             document.getElementById('clearAllBtn').addEventListener('click', clearAll);
-            document.getElementById('exportBtn').addEventListener('click', exportAll);
-            // Eventos da câmera modal
+            document.getElementById('generatePdfBtn').addEventListener('click', generatePDF);
             document.getElementById('capturePhotoBtn').addEventListener('click', capturePhoto);
             document.getElementById('closeCameraBtn').addEventListener('click', closeCameraModal);
         }
