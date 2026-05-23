@@ -7,871 +7,411 @@
     <!-- html2pdf CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: system-ui, 'Segoe UI', Roboto; background: #f1f5f9; padding: 0; width: 100%; }
+        .app-container { width: 100%; max-width: 100%; background: white; overflow-x: hidden; }
+        .header { padding: 20px 16px 12px; background: white; border-bottom: 1px solid #e2e8f0; }
+        h1 { font-size: 1.6rem; font-weight: 700; background: linear-gradient(135deg, #1e293b, #3b82f6); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 12px; }
+        .model-selector { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+        .model-btn { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; background: #f1f5f9; border: 2px solid transparent; border-radius: 16px; padding: 8px 12px; cursor: pointer; gap: 6px; min-width: 80px; transition: 0.1s; }
+        .model-btn.active { background: #dbeafe; border-color: #3b82f6; }
+        .model-icon { width: 48px; height: 48px; object-fit: contain; }
+        .model-name { font-size: 0.7rem; font-weight: 500; color: #334155; }
+        .sub { color: #dc2626; font-size: 0.75rem; margin-top: 8px; text-align: center; font-weight: 500; background: #fee2e2; padding: 6px; border-radius: 40px; }
+        .main-area, .custom-areas { padding: 16px; background: #f8fafc; }
+        .image-block { background: #ffffff; border-radius: 24px; padding: 16px; margin-bottom: 24px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+        .image-container { background: #eef2ff; border-radius: 20px; overflow: hidden; border: 1px solid #e2e8f0; }
+        .image-wrapper { position: relative; width: 100%; }
+        #vehicleImage, .angle-img { width: 100%; height: auto; display: block; cursor: crosshair; user-select: none; }
+        .marker { position: absolute; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 15px; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.3); cursor: pointer; transform: translate(-50%, -50%); box-shadow: 0 3px 10px rgba(0,0,0,0.25); z-index: 20; border: 2.5px solid white; transition: transform 0.05s; }
+        .marker:active { transform: translate(-50%, -50%) scale(1.05); }
+        .action-buttons { padding: 8px 16px 16px; display: flex; gap: 12px; flex-wrap: wrap; }
+        button { padding: 12px 16px; font-size: 0.9rem; font-weight: 600; border: none; border-radius: 60px; cursor: pointer; background: #f1f5f9; font-family: inherit; transition: 0.1s; }
+        button:active { transform: scale(0.96); }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-secondary { background: #10b981; color: white; }
+        .btn-pdf { background: #f59e0b; color: white; }
+        .block-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .block-title { font-weight: 700; font-size: 1.2rem; background: #e2e8f0; padding: 6px 14px; border-radius: 40px; }
+        .edit-title-btn, .delete-area-btn { background: none; border: none; font-size: 1rem; cursor: pointer; padding: 4px 8px; margin-left: 4px; border-radius: 30px; }
+        .edit-title-btn { background: #e2e8f0; }
+        .delete-area-btn { background: #fee2e2; color: #dc2626; }
+        .photos-carousel { position: relative; width: 100%; display: flex; align-items: center; margin-bottom: 16px; }
+        .carousel-track { flex: 1; overflow-x: auto; scroll-snap-type: x mandatory; display: flex; gap: 12px; padding: 8px 0; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
+        .carousel-track::-webkit-scrollbar { height: 4px; }
+        .photo-card { flex: 0 0 100%; scroll-snap-align: start; background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .photo-wrapper { position: relative; background: #eef2ff; min-height: 200px; display: flex; align-items: center; justify-content: center; }
+        .photo-placeholder { padding: 60px 20px; text-align: center; color: #64748b; background: #f1f5f9; }
+        .photo-actions { display: flex; justify-content: flex-end; padding: 8px; gap: 8px; background: #f8fafc; }
+        .photo-actions button { flex: none; padding: 6px 12px; font-size: 0.7rem; }
+        .delete-photo-btn { background: #fee2e2; color: #dc2626; }
+        .carousel-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); border: none; border-radius: 40px; width: 36px; height: 36px; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 25; color: white; transition: 0.1s; }
+        .carousel-btn:active { background: rgba(0,0,0,0.8); }
+        .prev-btn { left: 8px; }
+        .next-btn { right: 8px; }
+        .markers-list { margin-top: 16px; background: #fafcff; border-radius: 20px; padding: 12px; }
+        .markers-list-title { font-weight: 600; margin-bottom: 8px; font-size: 0.9rem; color: #1e293b; }
+        .observation-card { background: #ffffff; border-radius: 16px; padding: 12px; margin-bottom: 12px; border-left: 5px solid; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+        .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+        .color-badge { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 12px; }
+        .marker-info { flex: 1; font-size: 0.8rem; color: #334155; }
+        .delete-marker-btn { background: #fee2e2; border: none; padding: 4px 10px; border-radius: 30px; color: #dc2626; font-weight: bold; cursor: pointer; }
+        .observation-input { width: 100%; padding: 10px; border: 1.5px solid #e2e8f0; border-radius: 14px; font-family: inherit; resize: vertical; font-size: 0.85rem; }
+        .empty-markers { text-align: center; color: #94a3b8; padding: 20px; font-size: 0.8rem; background: #f8fafc; border-radius: 16px; }
+        .toast-message { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1e293bdd; backdrop-filter: blur(12px); color: white; padding: 10px 20px; border-radius: 60px; font-size: 0.85rem; opacity: 0; transition: 0.25s; pointer-events: none; z-index: 1000; white-space: nowrap; }
+        .toast-message.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .loading-overlay, .camera-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 2000; visibility: hidden; flex-direction: column; }
+        .loading-overlay { background: rgba(0,0,0,0.5); color: white; font-size: 1.2rem; backdrop-filter: blur(4px); }
+        .camera-modal { background: black; }
+        .camera-container { position: relative; width: 100%; max-width: 500px; background: black; border-radius: 20px; overflow: hidden; margin: 16px; }
+        .camera-video { width: 100%; display: block; }
+        .camera-controls { display: flex; gap: 16px; justify-content: center; padding: 16px; background: #1e293b; flex-wrap: wrap; }
+        .camera-controls button { flex: none; padding: 12px 24px; }
+        @media (max-width: 550px) {
+            .marker { width: 32px; height: 32px; font-size: 13px; }
+            .carousel-btn { width: 32px; height: 32px; font-size: 1rem; }
+            .model-icon { width: 40px; height: 40px; }
+            .model-btn { min-width: 70px; padding: 6px 8px; }
+            .block-header { flex-direction: column; align-items: flex-start; }
+        }
+        @media print {
+            body { background: white; padding: 0; }
+            .header, .action-buttons, .model-selector, .carousel-btn, .photo-actions, .delete-marker-btn, .edit-title-btn, .delete-area-btn, .toast-message, .camera-modal, .loading-overlay { display: none; }
+            .image-block { break-inside: avoid; page-break-inside: avoid; border: none; box-shadow: none; margin-bottom: 20px; }
+            .marker { display: none; }
+            .observation-card { break-inside: avoid; }
+            .photo-card { flex: 0 0 100%; max-width: 100%; }
+            .carousel-track { overflow: visible; display: block; }
+            .photo-card { margin-bottom: 16px; }
         }
 
-        body {
-            font-family: system-ui, 'Segoe UI', Roboto;
-            background: #f1f5f9;
-            padding: 0;
-            width: 100%;
-        }
-
-        .app-container {
-            width: 100%;
-            max-width: 100%;
-            background: white;
-            overflow-x: hidden;
-        }
-
-        .header {
-            padding: 20px 16px 12px;
-            background: white;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        h1 {
-            font-size: 1.6rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #1e293b, #3b82f6);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            margin-bottom: 12px;
-        }
-
-        .model-selector {
-            display: flex;
-            gap: 10px;
-            overflow-x: auto;
-            padding-bottom: 8px;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: thin;
-        }
-
-        .model-btn {
-            flex: 0 0 auto;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background: #f1f5f9;
-            border: 2px solid transparent;
-            border-radius: 16px;
-            padding: 8px 12px;
-            cursor: pointer;
-            gap: 6px;
-            min-width: 80px;
-            transition: 0.1s;
-        }
-
-        .model-btn.active {
-            background: #dbeafe;
-            border-color: #3b82f6;
-        }
-
-        .model-icon {
-            width: 48px;
-            height: 48px;
-            object-fit: contain;
-        }
-
-        .model-name {
-            font-size: 0.7rem;
-            font-weight: 500;
-            color: #334155;
-        }
-
-        .sub {
-            color: #dc2626;
-            font-size: 0.75rem;
-            margin-top: 8px;
-            text-align: center;
-            font-weight: 500;
-            background: #fee2e2;
-            padding: 6px;
-            border-radius: 40px;
-        }
-
-        .main-area,
-        .custom-areas {
-            padding: 16px;
-            background: #f8fafc;
-        }
-
-        .image-block {
-            background: #ffffff;
-            border-radius: 24px;
-            padding: 16px;
-            margin-bottom: 24px;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-        }
-
-        .image-container {
-            background: #eef2ff;
-            border-radius: 20px;
-            overflow: hidden;
-            border: 1px solid #e2e8f0;
-        }
-
-        .image-wrapper {
-            position: relative;
-            width: 100%;
-        }
-
-        #vehicleImage,
-        .angle-img {
-            width: 100%;
-            height: auto;
-            display: block;
-            cursor: crosshair;
-            user-select: none;
-        }
-
-        .marker {
-            position: absolute;
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 15px;
-            color: white;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-            cursor: pointer;
-            transform: translate(-50%, -50%);
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
-            z-index: 20;
-            border: 2.5px solid white;
-            transition: transform 0.05s;
-        }
-
-        .marker:active {
-            transform: translate(-50%, -50%) scale(1.05);
-        }
-
-        .action-buttons {
-            padding: 8px 16px 16px;
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        button {
-            padding: 12px 16px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            border: none;
-            border-radius: 60px;
-            cursor: pointer;
-            background: #f1f5f9;
-            font-family: inherit;
-            transition: 0.1s;
-        }
-
-        button:active {
-            transform: scale(0.96);
-        }
-
-        .btn-primary {
-            background: #3b82f6;
-            color: white;
-        }
-
-        .btn-danger {
-            background: #ef4444;
-            color: white;
-        }
-
-        .btn-secondary {
-            background: #10b981;
-            color: white;
-        }
-
-        .btn-pdf {
-            background: #f59e0b;
-            color: white;
-        }
-
-        .block-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .block-title {
-            font-weight: 700;
-            font-size: 1.2rem;
-            background: #e2e8f0;
-            padding: 6px 14px;
-            border-radius: 40px;
-        }
-
-        .edit-title-btn,
-        .delete-area-btn {
-            background: none;
-            border: none;
-            font-size: 1rem;
-            cursor: pointer;
-            padding: 4px 8px;
-            margin-left: 4px;
-            border-radius: 30px;
-        }
-
-        .edit-title-btn {
-            background: #e2e8f0;
-        }
-
-        .delete-area-btn {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-
-        /* ---------- CARROSSEL CORRIGIDO ---------- */
-        .photos-carousel {
-            position: relative;
-            width: 100%;
-            margin: 16px 0;
+        /* ==========================
+           CORREÇÕES PDF
+        ========================== */
+        .photo-card,
+        .image-block,
+        .observation-card,
+        .image-container,
+        .photo-wrapper {
+            break-inside: avoid;
+            page-break-inside: avoid;
         }
 
         .carousel-track {
-            display: flex;
-            overflow-x: auto;
-            scroll-snap-type: x mandatory;
-            gap: 12px;
-            padding: 8px 0;
-            -webkit-overflow-scrolling: touch;
-            scroll-behavior: smooth;
-            width: 100%;
-            scrollbar-width: thin;
+            overflow: visible !important;
         }
 
-        .carousel-track::-webkit-scrollbar {
-            height: 4px;
-        }
-
-        .photo-card {
-            flex: 0 0 100%;
-            scroll-snap-align: start;
-            background: white;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .photo-wrapper {
-            position: relative;
-            background: #eef2ff;
-            min-height: 200px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .photo-placeholder {
-            padding: 60px 20px;
-            text-align: center;
-            color: #64748b;
-            background: #f1f5f9;
-        }
-
-        .photo-actions {
-            display: flex;
-            justify-content: flex-end;
-            padding: 8px;
-            gap: 8px;
-            background: #f8fafc;
-        }
-
-        .photo-actions button {
-            flex: none;
-            padding: 6px 12px;
-            font-size: 0.7rem;
-        }
-
-        .delete-photo-btn {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-
-        .carousel-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
-            border: none;
-            border-radius: 40px;
-            width: 40px;
-            height: 40px;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 25;
-            color: white;
-            transition: 0.1s;
-            font-weight: bold;
-        }
-
-        .carousel-btn:active {
-            background: rgba(0, 0, 0, 0.9);
-            transform: translateY(-50%) scale(0.95);
-        }
-
-        .prev-btn {
-            left: 8px;
-        }
-
-        .next-btn {
-            right: 8px;
-        }
-
-        .markers-list {
-            margin-top: 16px;
-            background: #fafcff;
-            border-radius: 20px;
-            padding: 12px;
-        }
-
-        .observation-card {
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 12px;
-            margin-bottom: 12px;
-            border-left: 5px solid;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-        }
-
-        .card-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-        }
-
-        .color-badge {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: white;
-            font-size: 12px;
-        }
-
-        .marker-info {
-            flex: 1;
-            font-size: 0.8rem;
-            color: #334155;
-        }
-
-        .delete-marker-btn {
-            background: #fee2e2;
-            border: none;
-            padding: 4px 10px;
-            border-radius: 30px;
-            color: #dc2626;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .observation-input {
-            width: 100%;
-            padding: 10px;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 14px;
-            font-family: inherit;
-            resize: vertical;
-            font-size: 0.85rem;
-        }
-
-        .empty-markers {
-            text-align: center;
-            color: #94a3b8;
-            padding: 20px;
-            font-size: 0.8rem;
-            background: #f8fafc;
-            border-radius: 16px;
-        }
-
-        .toast-message {
-            position: fixed;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%) translateY(20px);
-            background: #1e293bdd;
-            backdrop-filter: blur(12px);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 60px;
-            font-size: 0.85rem;
-            opacity: 0;
-            transition: 0.25s;
-            pointer-events: none;
-            z-index: 1000;
-            white-space: nowrap;
-        }
-
-        .toast-message.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        .loading-overlay,
-        .camera-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            visibility: hidden;
-            flex-direction: column;
-        }
-
-        .loading-overlay {
-            background: rgba(0, 0, 0, 0.5);
-            color: white;
-            font-size: 1.2rem;
-            backdrop-filter: blur(4px);
-        }
-
-        .camera-modal {
-            background: black;
-        }
-
-        .camera-container {
-            position: relative;
-            width: 100%;
-            max-width: 500px;
-            background: black;
-            border-radius: 20px;
-            overflow: hidden;
-            margin: 16px;
-        }
-
-        .camera-video {
-            width: 100%;
+        img {
+            max-width: 100%;
             display: block;
         }
 
-        .camera-controls {
-            display: flex;
-            gap: 16px;
-            justify-content: center;
-            padding: 16px;
-            background: #1e293b;
-            flex-wrap: wrap;
-        }
-
-        .camera-controls button {
-            flex: none;
-            padding: 12px 24px;
-        }
-
-        @media (max-width: 550px) {
-            .marker {
-                width: 32px;
-                height: 32px;
-                font-size: 13px;
-            }
-
-            .carousel-btn {
-                width: 32px;
-                height: 32px;
-                font-size: 1rem;
-            }
-
-            .model-icon {
-                width: 40px;
-                height: 40px;
-            }
-
-            .model-btn {
-                min-width: 70px;
-                padding: 6px 8px;
-            }
-
-            .block-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-        }
-
-        /* Correções para impressão / PDF (sem afetar o funcionamento normal) */
         @media print {
             body {
-                background: white;
-                padding: 0;
+                background: white !important;
             }
-
-            .header,
-            .action-buttons,
-            .model-selector,
-            .carousel-btn,
-            .photo-actions,
-            .delete-marker-btn,
-            .edit-title-btn,
-            .delete-area-btn,
-            .toast-message,
-            .camera-modal,
-            .loading-overlay {
-                display: none;
-            }
-
-            .image-block {
-                break-inside: avoid;
-                page-break-inside: avoid;
-                border: none;
-                box-shadow: none;
-                margin-bottom: 20px;
-            }
-
-            .marker {
-                display: none;
-            }
-
-            .observation-card {
-                break-inside: avoid;
-            }
-
             .photo-card {
-                flex: 0 0 100%;
-                max-width: 100%;
+                width: 100% !important;
             }
-
             .carousel-track {
-                overflow: visible;
-                display: block;
+                display: block !important;
             }
-
-            .photo-card {
-                margin-bottom: 16px;
-            }
-        }
-
-        /* Garantia de que o carrossel nunca perca o overflow no modo normal */
-        .carousel-track {
-            overflow-x: auto !important;
-            display: flex !important;
         }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <div class="header">
-            <h1>🔧 Checklist Automotivo</h1>
-            <div class="model-selector" id="modelSelector">
-                <div class="model-btn" data-model="suv"><img class="model-icon"
-                        src="https://i.imgur.com/2PGFGkF.png"
-                        onerror="this.src='https://placehold.co/400x200?text=SUV'"><span
-                        class="model-name">SUV</span></div>
-                <div class="model-btn" data-model="lihha"><img class="model-icon"
-                        src="https://i.imgur.com/g9PWxya.png"
-                        onerror="this.src='https://placehold.co/400x200?text=LIHHA+LEVE'"><span
-                        class="model-name">LIHHA LEVE</span></div>
-                <div class="model-btn" data-model="sedan"><img class="model-icon"
-                        src="https://i.imgur.com/9byGaE0.png"
-                        onerror="this.src='https://placehold.co/400x200?text=SEDAN'"><span
-                        class="model-name">SEDAN</span></div>
-                <div class="model-btn" data-model="vam"><img class="model-icon"
-                        src="https://i.imgur.com/uXgVoyZ.png"
-                        onerror="this.src='https://placehold.co/400x200?text=VAM'"><span
-                        class="model-name">VAM</span></div>
-                <div class="model-btn" data-model="pickup"><img class="model-icon"
-                        src="https://i.imgur.com/RsrYBD6.png"
-                        onerror="this.src='https://placehold.co/400x200?text=PICK-UP'"><span
-                        class="model-name">PICK-UP</span></div>
-                <div class="model-btn" data-model="pickupcompacta"><img class="model-icon"
-                        src="https://i.imgur.com/8rw1mWL.png"
-                        onerror="this.src='https://placehold.co/400x200?text=PICK-UP+COMPACTA'"><span
-                        class="model-name">PICK-UP COMPACTA</span></div>
-            </div>
-            <div class="sub">⚠️ DOIS TOQUES na imagem para ADICIONAR marcador • UM TOQUE no marcador para REMOVER</div>
+<div class="app-container">
+    <div class="header">
+        <h1>🔧 Checklist Automotivo</h1>
+        <div class="model-selector" id="modelSelector">
+            <div class="model-btn" data-model="suv"><img class="model-icon" src="https://i.imgur.com/2PGFGkF.png" onerror="this.src='https://placehold.co/400x200?text=SUV'"><span class="model-name">SUV</span></div>
+            <div class="model-btn" data-model="lihha"><img class="model-icon" src="https://i.imgur.com/g9PWxya.png" onerror="this.src='https://placehold.co/400x200?text=LIHHA+LEVE'"><span class="model-name">LIHHA LEVE</span></div>
+            <div class="model-btn" data-model="sedan"><img class="model-icon" src="https://i.imgur.com/9byGaE0.png" onerror="this.src='https://placehold.co/400x200?text=SEDAN'"><span class="model-name">SEDAN</span></div>
+            <div class="model-btn" data-model="vam"><img class="model-icon" src="https://i.imgur.com/uXgVoyZ.png" onerror="this.src='https://placehold.co/400x200?text=VAM'"><span class="model-name">VAM</span></div>
+            <div class="model-btn" data-model="pickup"><img class="model-icon" src="https://i.imgur.com/RsrYBD6.png" onerror="this.src='https://placehold.co/400x200?text=PICK-UP'"><span class="model-name">PICK-UP</span></div>
+            <div class="model-btn" data-model="pickupcompacta"><img class="model-icon" src="https://i.imgur.com/8rw1mWL.png" onerror="this.src='https://placehold.co/400x200?text=PICK-UP+COMPACTA'"><span class="model-name">PICK-UP COMPACTA</span></div>
         </div>
-
-        <!-- IMAGEM PRINCIPAL (VISTA GERAL) -->
-        <div class="main-area">
-            <div class="image-block" id="mainBlock">
-                <div class="block-header">
-                    <span class="block-title">📍 Vista Geral</span>
-                </div>
-                <div class="image-container">
-                    <div class="image-wrapper" id="mainImageWrapper">
-                        <img id="vehicleImage" src="https://i.imgur.com/kDPznwV.png" alt="Vista geral"
-                            style="width:100%">
-                    </div>
-                </div>
-                <div id="markersList-main" class="markers-list"></div>
-            </div>
-        </div>
-
-        <div class="action-buttons">
-            <button id="addAreaBtn" class="btn-secondary">➕ Adicionar nova área</button>
-            <button id="generatePdfBtn" class="btn-pdf">📄 Gerar PDF</button>
-            <button id="clearAllBtn" class="btn-danger">🗑️ Limpar tudo</button>
-        </div>
-
-        <!-- ÂNGULOS FIXOS E ÁREAS CUSTOMIZADAS SERÃO INSERIDAS AQUI -->
-        <div id="dynamicAreas" class="custom-areas"></div>
+        <div class="sub">⚠️ DOIS TOQUES na imagem para ADICIONAR marcador • UM TOQUE no marcador para REMOVER</div>
     </div>
 
-    <div id="toastMsg" class="toast-message">✅ Adicionado</div>
-    <div id="loadingOverlay" class="loading-overlay">📸 Processando imagem...</div>
-
-    <!-- Modal da câmera traseira -->
-    <div id="cameraModal" class="camera-modal">
-        <div class="camera-container">
-            <video id="cameraVideo" class="camera-video" autoplay playsinline></video>
-            <div class="camera-controls">
-                <button id="capturePhotoBtn" style="background:#10b981;">📸 Capturar</button>
-                <button id="closeCameraBtn" style="background:#ef4444;">❌ Fechar</button>
+    <!-- IMAGEM PRINCIPAL (VISTA GERAL) -->
+    <div class="main-area">
+        <div class="image-block" id="mainBlock">
+            <div class="block-header">
+                <span class="block-title">📍 Vista Geral</span>
             </div>
+            <div class="image-container">
+                <div class="image-wrapper" id="mainImageWrapper">
+                    <img id="vehicleImage" src="https://i.imgur.com/kDPznwV.png" alt="Vista geral" style="width:100%">
+                </div>
+            </div>
+            <div id="markersList-main" class="markers-list"></div>
         </div>
     </div>
 
-    <script>
-        (function () {
-            // ---------- CORES ----------
-            const COLOR_PALETTE = ['#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316', '#14B8A6', '#A855F7', '#D946EF', '#84CC16'];
-            const getColorForNumber = (n) => COLOR_PALETTE[(n - 1) % COLOR_PALETTE.length];
+    <div class="action-buttons">
+        <button id="addAreaBtn" class="btn-secondary">➕ Adicionar nova área</button>
+        <button id="generatePdfBtn" class="btn-pdf">📄 Gerar PDF</button>
+        <button id="clearAllBtn" class="btn-danger">🗑️ Limpar tudo</button>
+    </div>
 
-            let photos = {};
-            let allMarkers = [];
-            let currentModel = 'suv';
-            let currentStream = null;
-            let pendingAreaId = null, pendingAreaNome = null;
+    <!-- ÂNGULOS FIXOS E ÁREAS CUSTOMIZADAS SERÃO INSERIDAS AQUI -->
+    <div id="dynamicAreas" class="custom-areas"></div>
+</div>
 
-            const fixedAreas = [
-                { id: 'lateralDireita', nome: '🚗 Lateral Direita' },
-                { id: 'lateralEsquerda', nome: '🚙 Lateral Esquerda' },
-                { id: 'frente', nome: '🔰 Frente' },
-                { id: 'tras', nome: '🔻 Traseira' },
-                { id: 'teto', nome: '☀️ Teto' },
-                { id: 'painel', nome: '📊 Painel' },
-                { id: 'interna', nome: '🪑 Interna (Bancos)' }
-            ];
-            let customAreas = [];
+<div id="toastMsg" class="toast-message">✅ Adicionado</div>
+<div id="loadingOverlay" class="loading-overlay">📸 Processando imagem...</div>
 
-            const modelImages = {
-                suv: 'https://i.imgur.com/2PGFGkF.png',
-                lihha: 'https://i.imgur.com/g9PWxya.png',
-                sedan: 'https://i.imgur.com/9byGaE0.png',
-                vam: 'https://i.imgur.com/uXgVoyZ.png',
-                pickup: 'https://i.imgur.com/RsrYBD6.png',
-                pickupcompacta: 'https://i.imgur.com/8rw1mWL.png'
-            };
+<!-- Modal da câmera traseira -->
+<div id="cameraModal" class="camera-modal">
+    <div class="camera-container">
+        <video id="cameraVideo" class="camera-video" autoplay playsinline></video>
+        <div class="camera-controls">
+            <button id="capturePhotoBtn" style="background:#10b981;">📸 Capturar</button>
+            <button id="closeCameraBtn" style="background:#ef4444;">❌ Fechar</button>
+        </div>
+    </div>
+</div>
 
-            // ========== AUXILIARES ==========
-            function showToast(msg, isErr = false) {
-                const toast = document.getElementById('toastMsg');
-                toast.textContent = isErr ? `⚠️ ${msg}` : `✅ ${msg}`;
-                toast.style.background = isErr ? '#ef4444dd' : '#1e293bdd';
-                toast.classList.add('show');
-                setTimeout(() => toast.classList.remove('show'), 1700);
-            }
-            function showLoading(show) { document.getElementById('loadingOverlay').style.visibility = show ? 'visible' : 'hidden'; }
-            function getNextNumber() { return allMarkers.length ? Math.max(...allMarkers.map(m => m.number)) + 1 : 1; }
-            function saveAll() {
-                localStorage.setItem('autoChecklistFinal', JSON.stringify({ photos, allMarkers, currentModel, customAreas }));
-            }
-            function loadAll() {
-                const saved = localStorage.getItem('autoChecklistFinal');
-                if (saved) {
-                    try {
-                        const data = JSON.parse(saved);
-                        photos = data.photos || {};
-                        allMarkers = data.allMarkers || [];
-                        currentModel = data.currentModel || 'suv';
-                        customAreas = data.customAreas || [];
-                        renumberMarkers();
-                        return true;
-                    } catch (e) { }
-                }
-                return false;
-            }
-            function renumberMarkers() {
-                const sorted = [...allMarkers].sort((a, b) => a.number - b.number);
-                let newNum = 1;
-                for (let m of sorted) { m.number = newNum; m.color = getColorForNumber(newNum); newNum++; }
-                allMarkers.forEach(m => {
-                    const el = document.getElementById(`marker-${m.id}`);
-                    if (el) { el.textContent = m.number; el.style.backgroundColor = m.color; }
-                });
-                renderAllMarkersLists();
-                saveAll();
-            }
-            function preserveCarouselScroll(areaId) {
-                const track = document.getElementById(`track-${areaId}`);
-                return track ? track.scrollLeft : 0;
-            }
+<script>
+    (function() {
+        // ---------- CORES ----------
+        const COLOR_PALETTE = ['#EF4444','#3B82F6','#10B981','#F59E0B','#8B5CF6','#EC4899','#06B6D4','#F97316','#14B8A6','#A855F7','#D946EF','#84CC16'];
+        const getColorForNumber = (n) => COLOR_PALETTE[(n-1) % COLOR_PALETTE.length];
 
-            // ========== IMAGENS E CÂMERA ==========
-            function processImageDataUrl(dataUrl, areaId, areaNome) {
-                const photoId = Date.now() + '-' + Math.random();
-                const newPhoto = { id: photoId, dataUrl, markersIds: [] };
-                if (!photos[areaId]) photos[areaId] = [];
-                photos[areaId].push(newPhoto);
-                saveAll();
-                const scrollLeft = preserveCarouselScroll(areaId);
-                renderAreaCarousel(areaId, areaNome, scrollLeft);
-                renderMarkersList(areaId);
-                showToast(`Foto adicionada em ${areaNome}`);
-            }
-            async function openBackCamera(areaId, areaNome) {
-                pendingAreaId = areaId; pendingAreaNome = areaNome;
-                const modal = document.getElementById('cameraModal');
-                const video = document.getElementById('cameraVideo');
-                if (currentStream) { currentStream.getTracks().forEach(track => track.stop()); currentStream = null; }
+        let photos = {};
+        let allMarkers = [];
+        let currentModel = 'suv';
+        let currentStream = null;
+        let pendingAreaId = null, pendingAreaNome = null;
+
+        const fixedAreas = [
+            { id: 'lateralDireita', nome: '🚗 Lateral Direita' },
+            { id: 'lateralEsquerda', nome: '🚙 Lateral Esquerda' },
+            { id: 'frente', nome: '🔰 Frente' },
+            { id: 'tras', nome: '🔻 Traseira' },
+            { id: 'teto', nome: '☀️ Teto' },
+            { id: 'painel', nome: '📊 Painel' },
+            { id: 'interna', nome: '🪑 Interna (Bancos)' }
+        ];
+        let customAreas = []; // { id, nome }
+
+        const modelImages = {
+            suv: 'https://i.imgur.com/2PGFGkF.png',
+            lihha: 'https://i.imgur.com/g9PWxya.png',
+            sedan: 'https://i.imgur.com/9byGaE0.png',
+            vam: 'https://i.imgur.com/uXgVoyZ.png',
+            pickup: 'https://i.imgur.com/RsrYBD6.png',
+            pickupcompacta: 'https://i.imgur.com/8rw1mWL.png'
+        };
+
+        function showToast(msg, isErr = false) {
+            const toast = document.getElementById('toastMsg');
+            toast.textContent = isErr ? `⚠️ ${msg}` : `✅ ${msg}`;
+            toast.style.background = isErr ? '#ef4444dd' : '#1e293bdd';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 1700);
+        }
+        function showLoading(show) { document.getElementById('loadingOverlay').style.visibility = show ? 'visible' : 'hidden'; }
+        function getNextNumber() { return allMarkers.length ? Math.max(...allMarkers.map(m=>m.number)) + 1 : 1; }
+
+        function saveAll() {
+            const data = { photos, allMarkers, currentModel, customAreas };
+            localStorage.setItem('autoChecklistFinal', JSON.stringify(data));
+        }
+        function loadAll() {
+            const saved = localStorage.getItem('autoChecklistFinal');
+            if(saved) {
                 try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                    const data = JSON.parse(saved);
+                    photos = data.photos || {};
+                    allMarkers = data.allMarkers || [];
+                    currentModel = data.currentModel || 'suv';
+                    customAreas = data.customAreas || [];
+                    renumberMarkers();
+                    return true;
+                } catch(e) {}
+            }
+            return false;
+        }
+
+        function renumberMarkers() {
+            const sorted = [...allMarkers].sort((a,b)=>a.number-b.number);
+            let newNum = 1;
+            for(let m of sorted) { m.number = newNum; m.color = getColorForNumber(newNum); newNum++; }
+            allMarkers.forEach(m => {
+                const el = document.getElementById(`marker-${m.id}`);
+                if(el) { el.textContent = m.number; el.style.backgroundColor = m.color; }
+            });
+            renderAllMarkersLists();
+            saveAll();
+        }
+
+        // Processamento de imagem (adicionar foto)
+        function processImageDataUrl(dataUrl, areaId, areaNome) {
+            const photoId = Date.now() + '-' + Math.random();
+            const newPhoto = { id: photoId, dataUrl, markersIds: [] };
+            if(!photos[areaId]) photos[areaId] = [];
+            photos[areaId].push(newPhoto);
+            saveAll();
+            const scrollLeft = preserveCarouselScroll(areaId);
+            renderAreaCarousel(areaId, areaNome, scrollLeft);
+            renderMarkersList(areaId);
+            showToast(`Foto adicionada em ${areaNome}`);
+        }
+
+        function preserveCarouselScroll(areaId) {
+            const track = document.getElementById(`track-${areaId}`);
+            return track ? track.scrollLeft : 0;
+        }
+
+        // Câmera traseira
+        async function openBackCamera(areaId, areaNome) {
+            pendingAreaId = areaId;
+            pendingAreaNome = areaNome;
+            const modal = document.getElementById('cameraModal');
+            const video = document.getElementById('cameraVideo');
+            if(currentStream) { currentStream.getTracks().forEach(track => track.stop()); currentStream = null; }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                currentStream = stream;
+                video.srcObject = stream;
+                modal.style.visibility = 'visible';
+            } catch (err) {
+                showToast('Câmera traseira não disponível. Usando câmera padrão.', true);
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                     currentStream = stream;
                     video.srcObject = stream;
                     modal.style.visibility = 'visible';
-                } catch (err) {
-                    showToast('Câmera traseira não disponível. Usando câmera padrão.', true);
-                    try {
-                        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                        currentStream = stream;
-                        video.srcObject = stream;
-                        modal.style.visibility = 'visible';
-                    } catch (err2) { showToast('Não foi possível acessar nenhuma câmera.', true); }
-                }
+                } catch (err2) { showToast('Não foi possível acessar nenhuma câmera.', true); }
             }
-            function closeCameraModal() {
-                const modal = document.getElementById('cameraModal');
-                const video = document.getElementById('cameraVideo');
-                if (currentStream) { currentStream.getTracks().forEach(track => track.stop()); currentStream = null; }
-                video.srcObject = null;
-                modal.style.visibility = 'hidden';
-                pendingAreaId = null; pendingAreaNome = null;
-            }
-            function capturePhoto() {
-                const video = document.getElementById('cameraVideo');
-                if (!video.videoWidth || !video.videoHeight) { showToast('Aguardando imagem da câmera...', true); return; }
-                const canvas = document.createElement('canvas');
-                canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-                if (pendingAreaId && pendingAreaNome) {
-                    processImageDataUrl(dataUrl, pendingAreaId, pendingAreaNome);
-                    closeCameraModal();
-                } else { closeCameraModal(); }
-            }
-            function addNewPhotoFromGallery(areaId, areaNome) {
-                const input = document.createElement('input');
-                input.type = 'file'; input.accept = 'image/*';
-                input.onchange = (e) => {
-                    if (e.target.files && e.target.files[0]) {
-                        showLoading(true);
-                        const file = e.target.files[0];
-                        const img = new Image();
-                        const url = URL.createObjectURL(file);
-                        img.onload = () => {
-                            URL.revokeObjectURL(url);
-                            let w = img.width, h = img.height;
-                            const maxSize = 1200;
-                            if (w > maxSize || h > maxSize) {
-                                if (w > h) { h = (h * maxSize) / w; w = maxSize; }
-                                else { w = (w * maxSize) / h; h = maxSize; }
-                            }
-                            const canvas = document.createElement('canvas');
-                            canvas.width = w; canvas.height = h;
-                            const ctx = canvas.getContext('2d');
-                            ctx.drawImage(img, 0, 0, w, h);
-                            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-                            showLoading(false);
-                            processImageDataUrl(dataUrl, areaId, areaNome);
-                        };
-                        img.onerror = () => { showLoading(false); showToast('Erro ao carregar imagem', true); };
-                        img.src = url;
-                    }
-                };
-                input.click();
-            }
-            function deletePhoto(areaId, photoId, areaNome) {
-                if (!photos[areaId]) return;
-                const photo = photos[areaId].find(p => p.id === photoId);
-                if (!photo) return;
-                photo.markersIds.forEach(mid => { const el = document.getElementById(`marker-${mid}`); if (el) el.remove(); });
-                allMarkers = allMarkers.filter(m => !photo.markersIds.includes(m.id));
-                photos[areaId] = photos[areaId].filter(p => p.id !== photoId);
-                if (photos[areaId].length === 0) delete photos[areaId];
-                renumberMarkers();
-                renderAreaCarousel(areaId, areaNome);
-                renderMarkersList(areaId);
-                showToast(`Foto removida de ${areaNome}`);
-            }
+        }
+        function closeCameraModal() {
+            const modal = document.getElementById('cameraModal');
+            const video = document.getElementById('cameraVideo');
+            if(currentStream) { currentStream.getTracks().forEach(track => track.stop()); currentStream = null; }
+            video.srcObject = null;
+            modal.style.visibility = 'hidden';
+            pendingAreaId = null; pendingAreaNome = null;
+        }
+        function capturePhoto() {
+            const video = document.getElementById('cameraVideo');
+            if(!video.videoWidth || !video.videoHeight) { showToast('Aguardando imagem da câmera...', true); return; }
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            if(pendingAreaId && pendingAreaNome) {
+                processImageDataUrl(dataUrl, pendingAreaId, pendingAreaNome);
+                closeCameraModal();
+            } else { closeCameraModal(); }
+        }
 
-            // ========== MARCADORES ==========
-            function addMarkerToPhoto(areaId, areaNome, photoId, xPercent, yPercent, wrapperElement) {
-                const newId = Date.now() + Math.random() * 1000;
-                const number = getNextNumber();
-                const color = getColorForNumber(number);
-                const newMarker = { id: newId, number, x: xPercent, y: yPercent, color, note: '', areaId, areaNome, photoId };
-                allMarkers.push(newMarker);
-                createMarkerElement(newMarker, wrapperElement);
-                const photoObj = photos[areaId]?.find(p => p.id === photoId);
-                if (photoObj) { if (!photoObj.markersIds) photoObj.markersIds = []; photoObj.markersIds.push(newMarker.id); }
-                renderMarkersList(areaId);
-                saveAll();
-                showToast(`Marcador #${number} em ${areaNome}`);
-            }
-            function removeMarker(markerId) {
-                const marker = allMarkers.find(m => m.id === markerId);
-                if (!marker) return;
-                allMarkers = allMarkers.filter(m => m.id !== markerId);
-                const photoObj = photos[marker.areaId]?.find(p => p.id === marker.photoId);
-                if (photoObj) photoObj.markersIds = photoObj.markersIds.filter(id => id !== markerId);
-                const el = document.getElementById(`marker-${markerId}`);
-                if (el) el.remove();
-                renumberMarkers();
-                showToast(`Marcador removido.`);
-            }
-            function updateNote(markerId, newNote) {
-                const m = allMarkers.find(m => m.id === markerId);
-                if (m) { m.note = newNote; saveAll(); }
-            }
-            function createMarkerElement(marker, wrapper) {
-                const div = document.createElement('div');
-                div.className = 'marker';
-                div.id = `marker-${marker.id}`;
-                div.style.backgroundColor = marker.color;
-                div.style.left = `${marker.x}%`;
-                div.style.top = `${marker.y}%`;
-                div.textContent = marker.number;
-                div.addEventListener('click', (e) => { e.stopPropagation(); removeMarker(marker.id); });
-                div.addEventListener('touchstart', (e) => e.stopPropagation());
-                wrapper.appendChild(div);
-            }
-            function renderMarkersList(areaId) {
-                const container = document.getElementById(`markersList-${areaId}`);
-                if (!container) return;
-                const areaMarkers = allMarkers.filter(m => m.areaId === areaId).sort((a, b) => a.number - b.number);
-                if (areaMarkers.length === 0) {
-                    container.innerHTML = '<div class="empty-markers">✨ Nenhum marcador nesta área. Dois toques na imagem para adicionar.</div>';
-                    return;
+        // Galeria
+        function addNewPhotoFromGallery(areaId, areaNome) {
+            const input = document.createElement('input');
+            input.type = 'file'; input.accept = 'image/*';
+            input.onchange = (e) => {
+                if(e.target.files && e.target.files[0]) {
+                    showLoading(true);
+                    const file = e.target.files[0];
+                    const img = new Image();
+                    const url = URL.createObjectURL(file);
+                    img.onload = () => {
+                        URL.revokeObjectURL(url);
+                        let w = img.width, h = img.height;
+                        const maxSize = 1200;
+                        if(w > maxSize || h > maxSize) {
+                            if(w > h) { h = (h * maxSize) / w; w = maxSize; }
+                            else { w = (w * maxSize) / h; h = maxSize; }
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w; canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, w, h);
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                        showLoading(false);
+                        processImageDataUrl(dataUrl, areaId, areaNome);
+                    };
+                    img.onerror = () => { showLoading(false); showToast('Erro ao carregar imagem', true); };
+                    img.src = url;
                 }
-                container.innerHTML = areaMarkers.map(m => `
+            };
+            input.click();
+        }
+
+        function deletePhoto(areaId, photoId, areaNome) {
+            if(!photos[areaId]) return;
+            const photo = photos[areaId].find(p => p.id === photoId);
+            if(!photo) return;
+            photo.markersIds.forEach(mid => { const el = document.getElementById(`marker-${mid}`); if(el) el.remove(); });
+            allMarkers = allMarkers.filter(m => !photo.markersIds.includes(m.id));
+            photos[areaId] = photos[areaId].filter(p => p.id !== photoId);
+            if(photos[areaId].length === 0) delete photos[areaId];
+            renumberMarkers();
+            renderAreaCarousel(areaId, areaNome);
+            renderMarkersList(areaId);
+            showToast(`Foto removida de ${areaNome}`);
+        }
+
+        // ---------- MARCADORES (DOUBLE-TAP sem recriar carrossel) ----------
+        function addMarkerToPhoto(areaId, areaNome, photoId, xPercent, yPercent, wrapperElement) {
+            const newId = Date.now() + Math.random() * 1000;
+            const number = getNextNumber();
+            const color = getColorForNumber(number);
+            const newMarker = { id: newId, number, x: xPercent, y: yPercent, color, note: '', areaId, areaNome, photoId };
+            allMarkers.push(newMarker);
+            createMarkerElement(newMarker, wrapperElement);
+            const photoObj = photos[areaId]?.find(p => p.id === photoId);
+            if(photoObj) { if(!photoObj.markersIds) photoObj.markersIds = []; photoObj.markersIds.push(newMarker.id); }
+            renderMarkersList(areaId);
+            saveAll();
+            showToast(`Marcador #${number} em ${areaNome}`);
+        }
+
+        function removeMarker(markerId) {
+            const marker = allMarkers.find(m => m.id === markerId);
+            if(!marker) return;
+            allMarkers = allMarkers.filter(m => m.id !== markerId);
+            const photoObj = photos[marker.areaId]?.find(p => p.id === marker.photoId);
+            if(photoObj) photoObj.markersIds = photoObj.markersIds.filter(id => id !== markerId);
+            const el = document.getElementById(`marker-${markerId}`);
+            if(el) el.remove();
+            renumberMarkers();
+            showToast(`Marcador removido.`);
+        }
+
+        function updateNote(markerId, newNote) {
+            const m = allMarkers.find(m => m.id === markerId);
+            if(m) { m.note = newNote; saveAll(); }
+        }
+
+        function createMarkerElement(marker, wrapper) {
+            const div = document.createElement('div');
+            div.className = 'marker';
+            div.id = `marker-${marker.id}`;
+            div.style.backgroundColor = marker.color;
+            div.style.left = `${marker.x}%`;
+            div.style.top = `${marker.y}%`;
+            div.textContent = marker.number;
+            div.addEventListener('click', (e) => { e.stopPropagation(); removeMarker(marker.id); });
+            div.addEventListener('touchstart', (e) => e.stopPropagation());
+            wrapper.appendChild(div);
+        }
+
+        // Renderiza a lista de observações de uma área (sem afetar carrossel)
+        function renderMarkersList(areaId) {
+            const container = document.getElementById(`markersList-${areaId}`);
+            if(!container) return;
+            const areaMarkers = allMarkers.filter(m => m.areaId === areaId).sort((a,b)=>a.number-b.number);
+            if(areaMarkers.length === 0) {
+                container.innerHTML = '<div class="empty-markers">✨ Nenhum marcador nesta área. Dois toques na imagem para adicionar.</div>';
+                return;
+            }
+            container.innerHTML = areaMarkers.map(m => `
                 <div class="observation-card" style="border-left-color: ${m.color}">
                     <div class="card-header">
                         <div class="color-badge" style="background:${m.color}">${m.number}</div>
@@ -881,146 +421,95 @@
                     <textarea class="observation-input" data-id="${m.id}" rows="2" placeholder="Descreva a avaria...">${escapeHtml(m.note)}</textarea>
                 </div>
             `).join('');
-                container.querySelectorAll('.delete-marker-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => { e.stopPropagation(); removeMarker(Number(btn.dataset.id)); });
-                });
-                container.querySelectorAll('.observation-input').forEach(ta => {
-                    ta.addEventListener('input', (e) => updateNote(Number(ta.dataset.id), e.target.value));
-                });
-            }
-            function renderAllMarkersLists() {
-                renderMarkersList('main');
-                fixedAreas.forEach(area => renderMarkersList(area.id));
-                customAreas.forEach(area => renderMarkersList(area.id));
-            }
-            function escapeHtml(str) { return str?.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])) || ''; }
+            container.querySelectorAll('.delete-marker-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => { e.stopPropagation(); removeMarker(Number(btn.dataset.id)); });
+            });
+            container.querySelectorAll('.observation-input').forEach(ta => {
+                ta.addEventListener('input', (e) => updateNote(Number(ta.dataset.id), e.target.value));
+            });
+        }
 
-            // ========== CARROSSEL CORRIGIDO (FUNCIONAL) ==========
-            function renderAreaCarousel(areaId, areaNome, restoreScroll = 0) {
-                const block = document.getElementById(`block-${areaId}`);
-                if (!block) return;
-                const photoList = photos[areaId] || [];
-                const hasPhotos = photoList.length > 0;
-                const carouselDiv = block.querySelector('.photos-carousel');
-                if (!carouselDiv) return;
+        function renderAllMarkersLists() {
+            renderMarkersList('main');
+            fixedAreas.forEach(area => renderMarkersList(area.id));
+            customAreas.forEach(area => renderMarkersList(area.id));
+        }
 
-                // Salvar posição de scroll atual
-                const oldTrack = document.getElementById(`track-${areaId}`);
-                const savedScroll = (restoreScroll !== undefined) ? restoreScroll : (oldTrack ? oldTrack.scrollLeft : 0);
+        function escapeHtml(str) { return str?.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])) || ''; }
 
-                // Criar estrutura do carrossel
-                carouselDiv.innerHTML = `
+        // Renderiza apenas o carrossel de uma área (sem recriar o bloco inteiro)
+        function renderAreaCarousel(areaId, areaNome, restoreScroll = 0) {
+            const block = document.getElementById(`block-${areaId}`);
+            if(!block) return;
+            const photoList = photos[areaId] || [];
+            const hasPhotos = photoList.length > 0;
+            const carouselDiv = block.querySelector('.photos-carousel');
+            if(!carouselDiv) return;
+            const savedScroll = (restoreScroll !== undefined) ? restoreScroll : (document.getElementById(`track-${areaId}`)?.scrollLeft || 0);
+            carouselDiv.innerHTML = `
                 <div class="carousel-track" id="track-${areaId}">
                     ${hasPhotos ? photoList.map(photo => `
                         <div class="photo-card">
-                            <div class="photo-wrapper" id="wrapper-${photo.id}">
-                                <img src="${photo.dataUrl}" class="angle-img" style="width:100%; display:block;">
-                            </div>
-                            <div class="photo-actions">
-                                <button class="delete-photo-btn" data-area="${areaId}" data-photo="${photo.id}">🗑️ Remover foto</button>
-                            </div>
+                            <div class="photo-wrapper" id="wrapper-${photo.id}"><img src="${photo.dataUrl}" class="angle-img"></div>
+                            <div class="photo-actions"><button class="delete-photo-btn" data-area="${areaId}" data-photo="${photo.id}">🗑️ Remover foto</button></div>
                         </div>
                     `).join('') : '<div class="photo-card"><div class="photo-placeholder">📸 Nenhuma foto.<br>Clique em "Câmera" ou "Galeria"</div></div>'}
                 </div>
-                ${hasPhotos ? `
-                    <button class="carousel-btn prev-btn" data-area="${areaId}">◀</button>
-                    <button class="carousel-btn next-btn" data-area="${areaId}">▶</button>
-                ` : ''}
+                ${hasPhotos ? `<button class="carousel-btn prev-btn" data-area="${areaId}">◀</button><button class="carousel-btn next-btn" data-area="${areaId}">▶</button>` : ''}
             `;
-
-                const newTrack = document.getElementById(`track-${areaId}`);
-                if (newTrack && savedScroll) {
-                    newTrack.scrollLeft = savedScroll;
-                }
-
-                // Adicionar eventos de duplo toque nas imagens
-                if (hasPhotos) {
-                    photoList.forEach(photo => {
-                        const wrapper = document.getElementById(`wrapper-${photo.id}`);
-                        const img = wrapper?.querySelector('.angle-img');
-                        if (img) {
-                            let lastTap = 0;
-                            const doubleTapHandler = (e) => {
-                                const now = Date.now();
-                                if (now - lastTap < 300) {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    const rect = img.getBoundingClientRect();
-                                    let x = ((e.clientX - rect.left) / rect.width) * 100;
-                                    let y = ((e.clientY - rect.top) / rect.height) * 100;
-                                    x = Math.min(100, Math.max(0, x));
-                                    y = Math.min(100, Math.max(0, y));
-                                    addMarkerToPhoto(areaId, areaNome, photo.id, x, y, wrapper);
-                                    lastTap = 0;
-                                } else {
-                                    lastTap = now;
-                                }
-                            };
-                            img.removeEventListener('click', doubleTapHandler);
-                            img.addEventListener('click', doubleTapHandler);
-                        }
-                    });
-
-                    // Botões de deletar foto
-                    carouselDiv.querySelectorAll('.delete-photo-btn').forEach(btn => {
-                        btn.removeEventListener('click', window._delHandler);
-                        const delHandler = (e) => {
-                            e.stopPropagation();
-                            deletePhoto(btn.dataset.area, btn.dataset.photo, areaNome);
-                        };
-                        btn.addEventListener('click', delHandler);
-                    });
-
-                    // Botões de navegação (setas) - garantir funcionamento
-                    const track = document.getElementById(`track-${areaId}`);
-                    const prevBtn = carouselDiv.querySelector('.prev-btn');
-                    const nextBtn = carouselDiv.querySelector('.next-btn');
-
-                    if (prevBtn) {
-                        prevBtn.removeEventListener('click', window._prevHandler);
-                        const prevHandler = (e) => {
-                            e.stopPropagation();
-                            if (track) {
-                                track.scrollBy({ left: -track.clientWidth * 0.9, behavior: 'smooth' });
-                            }
-                        };
-                        prevBtn.addEventListener('click', prevHandler);
-                        window._prevHandler = prevHandler; // guarda para remoção futura
-                    }
-                    if (nextBtn) {
-                        nextBtn.removeEventListener('click', window._nextHandler);
-                        const nextHandler = (e) => {
-                            e.stopPropagation();
-                            if (track) {
-                                track.scrollBy({ left: track.clientWidth * 0.9, behavior: 'smooth' });
-                            }
-                        };
-                        nextBtn.addEventListener('click', nextHandler);
-                        window._nextHandler = nextHandler;
-                    }
-                }
-
-                // Recriar marcadores existentes (sem duplicar)
+            const newTrack = document.getElementById(`track-${areaId}`);
+            if(newTrack && savedScroll) newTrack.scrollLeft = savedScroll;
+            
+            if(hasPhotos) {
                 photoList.forEach(photo => {
                     const wrapper = document.getElementById(`wrapper-${photo.id}`);
-                    if (wrapper) {
-                        const oldMarkers = wrapper.querySelectorAll('.marker');
-                        oldMarkers.forEach(m => m.remove());
-                        allMarkers.filter(m => m.photoId === photo.id).forEach(m => createMarkerElement(m, wrapper));
+                    const img = wrapper?.querySelector('.angle-img');
+                    if(img) {
+                        let lastTap = 0;
+                        const doubleTapHandler = (e) => {
+                            const now = Date.now();
+                            if(now - lastTap < 300) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const rect = img.getBoundingClientRect();
+                                let x = ((e.clientX - rect.left)/rect.width)*100;
+                                let y = ((e.clientY - rect.top)/rect.height)*100;
+                                x = Math.min(100,Math.max(0,x)); y = Math.min(100,Math.max(0,y));
+                                addMarkerToPhoto(areaId, areaNome, photo.id, x, y, wrapper);
+                                lastTap = 0;
+                            } else { lastTap = now; }
+                        };
+                        img.addEventListener('click', doubleTapHandler);
                     }
                 });
+                carouselDiv.querySelectorAll('.delete-photo-btn').forEach(btn => {
+                    btn.addEventListener('click', e => { e.stopPropagation(); deletePhoto(btn.dataset.area, btn.dataset.photo, areaNome); });
+                });
+                const track = document.getElementById(`track-${areaId}`);
+                const prev = carouselDiv.querySelector('.prev-btn');
+                const next = carouselDiv.querySelector('.next-btn');
+                if(prev) prev.addEventListener('click', () => track.scrollBy({ left: -track.clientWidth*0.9, behavior: 'smooth' }));
+                if(next) next.addEventListener('click', () => track.scrollBy({ left: track.clientWidth*0.9, behavior: 'smooth' }));
             }
+            // recriar marcadores já existentes nas fotos
+            photoList.forEach(photo => {
+                const wrapper = document.getElementById(`wrapper-${photo.id}`);
+                if(wrapper) allMarkers.filter(m => m.photoId === photo.id).forEach(m => createMarkerElement(m, wrapper));
+            });
+        }
 
-            // ========== RENDERIZAÇÃO DE BLOCOS E ÁREAS ==========
-            function renderAreaBlock(areaId, areaNome, isCustom = false) {
-                let block = document.getElementById(`block-${areaId}`);
-                if (!block) {
-                    block = document.createElement('div');
-                    block.className = 'image-block';
-                    block.id = `block-${areaId}`;
-                    document.getElementById('dynamicAreas').appendChild(block);
-                }
-                block.innerHTML = `
+        // Renderiza um bloco completo (header + carrossel + lista) - usado inicialmente e ao adicionar/remover áreas
+        function renderAreaBlock(areaId, areaNome, isCustom = false) {
+            let block = document.getElementById(`block-${areaId}`);
+            if(!block) {
+                block = document.createElement('div');
+                block.className = 'image-block';
+                block.id = `block-${areaId}`;
+                document.getElementById('dynamicAreas').appendChild(block);
+            }
+            const photoList = photos[areaId] || [];
+            const hasPhotos = photoList.length > 0;
+            block.innerHTML = `
                 <div class="block-header">
                     <span class="block-title">${areaNome}</span>
                     <div>
@@ -1033,207 +522,249 @@
                 <div class="photos-carousel"></div>
                 <div id="markersList-${areaId}" class="markers-list"></div>
             `;
-                block.querySelector('.take-photo-btn')?.addEventListener('click', () => openBackCamera(areaId, areaNome));
-                block.querySelector('.add-photo-btn')?.addEventListener('click', () => addNewPhotoFromGallery(areaId, areaNome));
-                if (isCustom) {
-                    block.querySelector('.edit-title-btn')?.addEventListener('click', () => editAreaName(areaId));
-                    block.querySelector('.delete-area-btn')?.addEventListener('click', () => deleteCustomArea(areaId));
-                }
-                renderAreaCarousel(areaId, areaNome);
-                renderMarkersList(areaId);
+            block.querySelector('.take-photo-btn')?.addEventListener('click', () => openBackCamera(areaId, areaNome));
+            block.querySelector('.add-photo-btn')?.addEventListener('click', () => addNewPhotoFromGallery(areaId, areaNome));
+            if(isCustom) {
+                block.querySelector('.edit-title-btn')?.addEventListener('click', () => editAreaName(areaId));
+                block.querySelector('.delete-area-btn')?.addEventListener('click', () => deleteCustomArea(areaId));
             }
-            function renderAllAreas() {
-                const container = document.getElementById('dynamicAreas');
-                container.innerHTML = '';
-                fixedAreas.forEach(area => renderAreaBlock(area.id, area.nome, false));
-                customAreas.forEach(area => renderAreaBlock(area.id, area.nome, true));
-            }
-            function setupMainArea() {
-                const mainImg = document.getElementById('vehicleImage');
-                const mainWrapper = document.getElementById('mainImageWrapper');
-                const newImg = mainImg.cloneNode(true);
-                mainImg.parentNode.replaceChild(newImg, mainImg);
-                const newWrapper = mainWrapper.cloneNode(true);
-                mainWrapper.parentNode.replaceChild(newWrapper, mainWrapper);
-                const finalImg = document.getElementById('vehicleImage');
-                const finalWrapper = document.getElementById('mainImageWrapper');
-                let lastTap = 0;
-                const doubleTapHandler = (e) => {
-                    const now = Date.now();
-                    if (now - lastTap < 300) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const rect = finalImg.getBoundingClientRect();
-                        let x = ((e.clientX - rect.left) / rect.width) * 100;
-                        let y = ((e.clientY - rect.top) / rect.height) * 100;
-                        x = Math.min(100, Math.max(0, x));
-                        y = Math.min(100, Math.max(0, y));
-                        const newId = Date.now() + Math.random();
-                        const number = getNextNumber();
-                        const color = getColorForNumber(number);
-                        const newMarker = { id: newId, number, x, y, color, note: '', areaId: 'main', areaNome: 'Vista Geral', photoId: 'main' };
-                        allMarkers.push(newMarker);
-                        createMarkerElement(newMarker, finalWrapper);
-                        renderMarkersList('main');
-                        saveAll();
-                        showToast(`Marcador #${number} na vista geral`);
-                        lastTap = 0;
-                    } else { lastTap = now; }
-                };
-                finalImg.addEventListener('click', doubleTapHandler);
-                allMarkers.filter(m => m.photoId === 'main').forEach(m => createMarkerElement(m, finalWrapper));
-                renderMarkersList('main');
-            }
-            function addCustomArea() {
-                const areaId = 'custom_' + Date.now();
-                const areaNome = prompt('Nome da nova área (ex: Motor, Vazamento):', 'Nova área');
-                if (!areaNome) return;
-                customAreas.push({ id: areaId, nome: areaNome });
-                saveAll();
-                renderAreaBlock(areaId, areaNome, true);
-                showToast(`Área "${areaNome}" adicionada`);
-            }
-            function editAreaName(areaId) {
-                const area = customAreas.find(a => a.id === areaId);
-                if (!area) return;
-                const newNome = prompt('Editar nome:', area.nome);
-                if (newNome) {
-                    area.nome = newNome;
-                    const titleSpan = document.querySelector(`#block-${areaId} .block-title`);
-                    if (titleSpan) titleSpan.textContent = newNome;
+            renderAreaCarousel(areaId, areaNome);
+            renderMarkersList(areaId);
+        }
+
+        function renderAllAreas() {
+            const container = document.getElementById('dynamicAreas');
+            container.innerHTML = '';
+            fixedAreas.forEach(area => renderAreaBlock(area.id, area.nome, false));
+            customAreas.forEach(area => renderAreaBlock(area.id, area.nome, true));
+        }
+
+        // Área principal (vista geral)
+        function setupMainArea() {
+            const mainImg = document.getElementById('vehicleImage');
+            const mainWrapper = document.getElementById('mainImageWrapper');
+            const newImg = mainImg.cloneNode(true);
+            mainImg.parentNode.replaceChild(newImg, mainImg);
+            const newWrapper = mainWrapper.cloneNode(true);
+            mainWrapper.parentNode.replaceChild(newWrapper, mainWrapper);
+            const finalImg = document.getElementById('vehicleImage');
+            const finalWrapper = document.getElementById('mainImageWrapper');
+            let lastTap = 0;
+            const doubleTapHandler = (e) => {
+                const now = Date.now();
+                if(now - lastTap < 300) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const rect = finalImg.getBoundingClientRect();
+                    let x = ((e.clientX - rect.left)/rect.width)*100;
+                    let y = ((e.clientY - rect.top)/rect.height)*100;
+                    x = Math.min(100,Math.max(0,x)); y = Math.min(100,Math.max(0,y));
+                    const newId = Date.now() + Math.random();
+                    const number = getNextNumber();
+                    const color = getColorForNumber(number);
+                    const newMarker = { id: newId, number, x, y, color, note: '', areaId: 'main', areaNome: 'Vista Geral', photoId: 'main' };
+                    allMarkers.push(newMarker);
+                    createMarkerElement(newMarker, finalWrapper);
+                    renderMarkersList('main');
                     saveAll();
-                    showToast(`Nome alterado para "${newNome}"`);
-                }
-            }
-            function deleteCustomArea(areaId) {
-                if (!confirm('Remover esta área e todas as suas fotos e marcadores?')) return;
-                const areaPhotos = photos[areaId] || [];
-                areaPhotos.forEach(photo => {
-                    photo.markersIds.forEach(mid => { const el = document.getElementById(`marker-${mid}`); if (el) el.remove(); });
-                });
-                allMarkers = allMarkers.filter(m => m.areaId !== areaId);
-                delete photos[areaId];
-                customAreas = customAreas.filter(a => a.id !== areaId);
+                    showToast(`Marcador #${number} na vista geral`);
+                    lastTap = 0;
+                } else { lastTap = now; }
+            };
+            finalImg.addEventListener('click', doubleTapHandler);
+            allMarkers.filter(m => m.photoId === 'main').forEach(m => createMarkerElement(m, finalWrapper));
+            renderMarkersList('main');
+        }
+
+        // Áreas customizadas
+        function addCustomArea() {
+            const areaId = 'custom_' + Date.now();
+            const areaNome = prompt('Nome da nova área (ex: Motor, Vazamento):', 'Nova área');
+            if(!areaNome) return;
+            customAreas.push({ id: areaId, nome: areaNome });
+            saveAll();
+            renderAreaBlock(areaId, areaNome, true);
+            showToast(`Área "${areaNome}" adicionada`);
+        }
+        function editAreaName(areaId) {
+            const area = customAreas.find(a => a.id === areaId);
+            if(!area) return;
+            const newNome = prompt('Editar nome:', area.nome);
+            if(newNome) {
+                area.nome = newNome;
+                const titleSpan = document.querySelector(`#block-${areaId} .block-title`);
+                if(titleSpan) titleSpan.textContent = newNome;
                 saveAll();
-                const block = document.getElementById(`block-${areaId}`);
-                if (block) block.remove();
-                showToast('Área removida');
+                showToast(`Nome alterado para "${newNome}"`);
             }
+        }
+        function deleteCustomArea(areaId) {
+            if(!confirm('Remover esta área e todas as suas fotos e marcadores?')) return;
+            const areaPhotos = photos[areaId] || [];
+            areaPhotos.forEach(photo => {
+                photo.markersIds.forEach(mid => { const el = document.getElementById(`marker-${mid}`); if(el) el.remove(); });
+            });
+            allMarkers = allMarkers.filter(m => m.areaId !== areaId);
+            delete photos[areaId];
+            customAreas = customAreas.filter(a => a.id !== areaId);
+            saveAll();
+            const block = document.getElementById(`block-${areaId}`);
+            if(block) block.remove();
+            showToast('Área removida');
+        }
 
-            // ========== PDF CORRIGIDO ==========
-            async function generatePDF() {
-                showToast('Preparando PDF...');
-                const original = document.querySelector('.app-container');
-                const element = original.cloneNode(true);
-                const tempContainer = document.createElement('div');
-                tempContainer.style.position = 'fixed';
-                tempContainer.style.left = '-99999px';
-                tempContainer.style.top = '0';
-                tempContainer.style.width = '1200px';
-                tempContainer.style.background = '#ffffff';
-                tempContainer.style.zIndex = '-1';
-                document.body.appendChild(tempContainer);
-                tempContainer.appendChild(element);
+        // ==========================
+        // GERAR PDF CORRIGIDO (async, aguarda imagens, sem overflow)
+        // ==========================
+        async function generatePDF() {
+            showToast('Preparando PDF...');
 
-                // Remove elementos desnecessários
-                element.querySelectorAll(`
-                .carousel-btn, .photo-actions button, .delete-marker-btn,
-                .edit-title-btn, .delete-area-btn, .action-buttons,
-                .model-selector, .sub, .toast-message, .camera-modal, .loading-overlay
+            // CLONA A APLICAÇÃO
+            const original = document.querySelector('.app-container');
+            const element = original.cloneNode(true);
+
+            // CRIA CONTAINER TEMPORÁRIO FORA DA TELA
+            const tempContainer = document.createElement('div');
+            tempContainer.style.position = 'fixed';
+            tempContainer.style.left = '-99999px';
+            tempContainer.style.top = '0';
+            tempContainer.style.width = '1200px';
+            tempContainer.style.background = '#ffffff';
+            tempContainer.style.zIndex = '-1';
+            document.body.appendChild(tempContainer);
+            tempContainer.appendChild(element);
+
+            // REMOVE BOTÕES E CONTROLES QUE ATRAPALHAM
+            element.querySelectorAll(`
+                .carousel-btn,
+                .photo-actions button,
+                .delete-marker-btn,
+                .edit-title-btn,
+                .delete-area-btn,
+                .action-buttons,
+                .model-selector,
+                .sub,
+                .toast-message,
+                .camera-modal,
+                .loading-overlay
             `).forEach(el => el.remove());
 
-                // Ajusta o layout para PDF (empilhar fotos)
-                element.querySelectorAll('.carousel-track').forEach(track => {
-                    track.style.display = 'flex';
-                    track.style.flexDirection = 'column';
-                    track.style.overflow = 'visible';
-                    track.style.width = '100%';
-                    track.style.gap = '20px';
-                });
-                element.querySelectorAll('.photo-card').forEach(card => {
-                    card.style.width = '100%';
-                    card.style.maxWidth = '100%';
-                    card.style.flex = 'none';
-                    card.style.breakInside = 'avoid';
-                    card.style.pageBreakInside = 'avoid';
-                    card.style.marginBottom = '20px';
-                });
-                element.querySelectorAll('.image-block').forEach(block => {
-                    block.style.breakInside = 'avoid';
-                    block.style.pageBreakInside = 'avoid';
-                    block.style.marginBottom = '30px';
-                });
-                element.querySelectorAll('img').forEach(img => {
-                    img.style.maxWidth = '100%';
-                    img.style.display = 'block';
-                    img.style.pageBreakInside = 'avoid';
-                    img.crossOrigin = 'anonymous';
-                });
+            // AJUSTA CARROSSÉIS PARA FICAREM EMPILHADOS (EVITA OVERFLOW)
+            element.querySelectorAll('.carousel-track').forEach(track => {
+                track.style.display = 'flex';
+                track.style.flexDirection = 'column';
+                track.style.overflow = 'visible';
+                track.style.width = '100%';
+                track.style.gap = '20px';
+            });
 
-                // Aguarda todas as imagens carregarem
-                const images = element.querySelectorAll('img');
-                await Promise.all(Array.from(images).map(img => new Promise(resolve => {
-                    if (img.complete) resolve();
-                    else { img.onload = resolve; img.onerror = resolve; }
-                })));
+            // AJUSTA CADA CARD DE FOTO PARA OCUPAR 100% E EVITAR QUEBRAS
+            element.querySelectorAll('.photo-card').forEach(card => {
+                card.style.width = '100%';
+                card.style.maxWidth = '100%';
+                card.style.flex = 'none';
+                card.style.breakInside = 'avoid';
+                card.style.pageBreakInside = 'avoid';
+                card.style.marginBottom = '20px';
+            });
 
-                const opt = {
-                    margin: [8, 8, 8, 8],
-                    filename: `checklist_${Date.now()}.pdf`,
-                    image: { type: 'jpeg', quality: 1 },
-                    html2canvas: { scale: 3, useCORS: true, allowTaint: true, logging: false, scrollX: 0, scrollY: 0, backgroundColor: '#ffffff' },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-                };
-                try {
-                    await html2pdf().set(opt).from(element).save();
-                    showToast('PDF gerado com sucesso!');
-                } catch (err) {
-                    console.error(err);
-                    showToast('Erro ao gerar PDF', true);
-                } finally {
-                    document.body.removeChild(tempContainer);
-                }
+            // BLOCO DE IMAGEM SEM QUEBRA
+            element.querySelectorAll('.image-block').forEach(block => {
+                block.style.breakInside = 'avoid';
+                block.style.pageBreakInside = 'avoid';
+                block.style.marginBottom = '30px';
+            });
+
+            // GARANTE QUE IMAGENS NÃO CORTEM
+            element.querySelectorAll('img').forEach(img => {
+                img.style.maxWidth = '100%';
+                img.style.display = 'block';
+                img.style.pageBreakInside = 'avoid';
+                img.crossOrigin = 'anonymous';
+            });
+
+            // ESPERA TODAS AS IMAGENS CARREGAREM (incluindo Imgur e fotos do usuário)
+            const images = element.querySelectorAll('img');
+            await Promise.all(
+                Array.from(images).map(img => {
+                    return new Promise(resolve => {
+                        if (img.complete) {
+                            resolve();
+                        } else {
+                            img.onload = resolve;
+                            img.onerror = resolve; // segue mesmo com erro
+                        }
+                    });
+                })
+            );
+
+            // CONFIGURAÇÕES DO PDF (margens, qualidade, etc.)
+            const opt = {
+                margin: [8, 8, 8, 8],
+                filename: `checklist_${Date.now()}.pdf`,
+                image: { type: 'jpeg', quality: 1 },
+                html2canvas: {
+                    scale: 3,
+                    useCORS: true,
+                    allowTaint: true,
+                    logging: false,
+                    scrollX: 0,
+                    scrollY: 0,
+                    backgroundColor: '#ffffff'
+                },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+
+            try {
+                await html2pdf().set(opt).from(element).save();
+                showToast('PDF gerado com sucesso!');
+            } catch (err) {
+                console.error(err);
+                showToast('Erro ao gerar PDF', true);
+            } finally {
+                // Remove o container temporário
+                document.body.removeChild(tempContainer);
             }
+        }
 
-            // ========== MODELO E LIMPEZA ==========
-            function switchModel(modelId) {
-                currentModel = modelId;
-                const mainImg = document.getElementById('vehicleImage');
-                if (mainImg) mainImg.src = modelImages[modelId] || modelImages.suv;
+        // Modelo, limpeza
+        function switchModel(modelId) {
+            currentModel = modelId;
+            const mainImg = document.getElementById('vehicleImage');
+            if(mainImg) mainImg.src = modelImages[modelId] || modelImages.suv;
+            saveAll();
+            document.querySelectorAll('.model-btn').forEach(btn => {
+                if(btn.dataset.model === modelId) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+        }
+        function clearAll() {
+            if(allMarkers.length === 0 && Object.keys(photos).length === 0 && customAreas.length === 0) return;
+            if(confirm('Remover TODOS os marcadores, fotos e áreas personalizadas?')) {
+                allMarkers.forEach(m => { const el = document.getElementById(`marker-${m.id}`); if(el) el.remove(); });
+                allMarkers = []; photos = {}; customAreas = [];
                 saveAll();
-                document.querySelectorAll('.model-btn').forEach(btn => {
-                    if (btn.dataset.model === modelId) btn.classList.add('active');
-                    else btn.classList.remove('active');
-                });
-            }
-            function clearAll() {
-                if (allMarkers.length === 0 && Object.keys(photos).length === 0 && customAreas.length === 0) return;
-                if (confirm('Remover TODOS os marcadores, fotos e áreas personalizadas?')) {
-                    allMarkers.forEach(m => { const el = document.getElementById(`marker-${m.id}`); if (el) el.remove(); });
-                    allMarkers = []; photos = {}; customAreas = [];
-                    saveAll();
-                    renderAllAreas();
-                    setupMainArea();
-                    showToast('Checklist completamente resetado');
-                }
-            }
-
-            // ========== INICIALIZAÇÃO ==========
-            function init() {
-                loadAll();
-                setupMainArea();
                 renderAllAreas();
-                document.querySelectorAll('.model-btn').forEach(btn => btn.addEventListener('click', () => switchModel(btn.dataset.model)));
-                switchModel(currentModel);
-                document.getElementById('addAreaBtn').addEventListener('click', addCustomArea);
-                document.getElementById('clearAllBtn').addEventListener('click', clearAll);
-                document.getElementById('generatePdfBtn').addEventListener('click', generatePDF);
-                document.getElementById('capturePhotoBtn').addEventListener('click', capturePhoto);
-                document.getElementById('closeCameraBtn').addEventListener('click', closeCameraModal);
+                setupMainArea();
+                showToast('Checklist completamente resetado');
             }
-            window.addEventListener('load', init);
-        })();
-    </script>
+        }
+
+        function init() {
+            loadAll();
+            setupMainArea();
+            renderAllAreas();
+            document.querySelectorAll('.model-btn').forEach(btn => btn.addEventListener('click', () => switchModel(btn.dataset.model)));
+            switchModel(currentModel);
+            document.getElementById('addAreaBtn').addEventListener('click', addCustomArea);
+            document.getElementById('clearAllBtn').addEventListener('click', clearAll);
+            document.getElementById('generatePdfBtn').addEventListener('click', generatePDF);
+            document.getElementById('capturePhotoBtn').addEventListener('click', capturePhoto);
+            document.getElementById('closeCameraBtn').addEventListener('click', closeCameraModal);
+        }
+        window.addEventListener('load', init);
+    })();
+</script>
 </body>
 </html>
