@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Checklist Automotivo - Double-Tap e Câmera Traseira</title>
+    <title>Checklist Automotivo - Câmera Traseira e Double-Tap</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: system-ui, 'Segoe UI', Roboto; background: #f1f5f9; padding: 0; width: 100%; }
@@ -59,7 +59,13 @@
         .empty-state { text-align: center; color: #94a3b8; padding: 48px 20px; background: #f8fafc; border-radius: 24px; }
         .toast-message { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1e293bdd; backdrop-filter: blur(12px); color: white; padding: 10px 20px; border-radius: 60px; font-size: 0.85rem; opacity: 0; transition: 0.25s; pointer-events: none; z-index: 1000; white-space: nowrap; }
         .toast-message.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2000; visibility: hidden; color: white; font-size: 1.2rem; backdrop-filter: blur(4px); }
+        .loading-overlay, .camera-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 2000; visibility: hidden; flex-direction: column; }
+        .loading-overlay { background: rgba(0,0,0,0.5); color: white; font-size: 1.2rem; backdrop-filter: blur(4px); }
+        .camera-modal { visibility: hidden; background: black; }
+        .camera-container { position: relative; width: 100%; max-width: 500px; background: black; border-radius: 20px; overflow: hidden; }
+        .camera-video { width: 100%; display: block; }
+        .camera-controls { display: flex; gap: 16px; justify-content: center; padding: 16px; background: #1e293b; }
+        .camera-controls button { flex: none; padding: 12px 24px; }
         @media (max-width: 550px) { .marker { width: 32px; height: 32px; font-size: 13px; } .carousel-btn { width: 32px; height: 32px; } }
     </style>
 </head>
@@ -101,6 +107,17 @@
 <div id="toastMsg" class="toast-message">✅ Adicionado</div>
 <div id="loadingOverlay" class="loading-overlay">📸 Processando imagem...</div>
 
+<!-- Modal da câmera traseira -->
+<div id="cameraModal" class="camera-modal">
+    <div class="camera-container">
+        <video id="cameraVideo" class="camera-video" autoplay playsinline></video>
+        <div class="camera-controls">
+            <button id="capturePhotoBtn" style="background:#10b981;">📸 Capturar</button>
+            <button id="closeCameraBtn" style="background:#ef4444;">❌ Fechar</button>
+        </div>
+    </div>
+</div>
+
 <script>
     (function() {
         // ---------- CORES ----------
@@ -108,9 +125,12 @@
         const getColorForNumber = (n) => COLOR_PALETTE[(n-1) % COLOR_PALETTE.length];
 
         // ---------- ESTADO GLOBAL ----------
-        let photos = {};          
-        let allMarkers = [];      
+        let photos = {};          // { areaId: [ { id, dataUrl, markersIds } ] }
+        let allMarkers = [];      // cada marker: { id, number, x, y, color, note, areaId, areaNome, photoId }
         let currentModel = 'suv';
+        let currentStream = null; // guarda stream da câmera
+        let pendingAreaId = null, pendingAreaNome = null; // para onde vai a foto capturada
+
         const modelImages = {
             suv: 'https://i.imgur.com/2PGFGkF.png',
             lihha: 'https://i.imgur.com/g9PWxya.png',
@@ -160,54 +180,82 @@
             saveAll();
         }
 
-        // ---------- PROCESSAMENTO DE IMAGEM ----------
-        function processImageFile(file, callback) {
-            const img = new Image();
-            const url = URL.createObjectURL(file);
-            img.onload = () => {
-                URL.revokeObjectURL(url);
-                let w = img.width, h = img.height;
-                const maxSize = 1200;
-                if(w > maxSize || h > maxSize) {
-                    if(w > h) { h = (h * maxSize) / w; w = maxSize; }
-                    else { w = (w * maxSize) / h; h = maxSize; }
-                }
-                const canvas = document.createElement('canvas');
-                canvas.width = w; canvas.height = h;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, w, h);
-                callback(canvas.toDataURL('image/jpeg', 0.85));
-            };
-            img.onerror = () => { URL.revokeObjectURL(url); showToast('Erro ao carregar imagem', true); callback(null); };
-            img.src = url;
+        // ---------- PROCESSAMENTO DE IMAGEM (DATAURL) ----------
+        function processImageDataUrl(dataUrl, areaId, areaNome) {
+            const photoId = Date.now() + '-' + Math.random();
+            const newPhoto = { id: photoId, dataUrl, markersIds: [] };
+            if(!photos[areaId]) photos[areaId] = [];
+            photos[areaId].push(newPhoto);
+            saveAll();
+            renderAngleArea(areaId, areaNome);
+            showToast(`Foto adicionada em ${areaNome}`);
         }
 
-        // ---------- CÂMARA TRASEIRA ----------
-        function takePhotoWithBackCamera(areaId, areaNome) {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            input.setAttribute('capture', 'environment'); 
-            input.onchange = (e) => {
-                if(e.target.files && e.target.files[0]) {
-                    showLoading(true);
-                    processImageFile(e.target.files[0], (dataUrl) => {
-                        showLoading(false);
-                        if(dataUrl) {
-                            const photoId = Date.now() + '-' + Math.random();
-                            const newPhoto = { id: photoId, dataUrl, markersIds: [] };
-                            if(!photos[areaId]) photos[areaId] = [];
-                            photos[areaId].push(newPhoto);
-                            saveAll();
-                            renderAngleArea(areaId, areaNome);
-                            showToast(`Foto adicionada em ${areaNome}`);
-                        } else showToast('Falha ao capturar foto', true);
-                    });
+        // ---------- CÂMARA TRASEIRA (MODAL) ----------
+        async function openBackCamera(areaId, areaNome) {
+            pendingAreaId = areaId;
+            pendingAreaNome = areaNome;
+            const modal = document.getElementById('cameraModal');
+            const video = document.getElementById('cameraVideo');
+            if(currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "environment" }
+                });
+                currentStream = stream;
+                video.srcObject = stream;
+                modal.style.visibility = 'visible';
+            } catch (err) {
+                console.warn(err);
+                showToast('Câmera traseira não disponível. Usando câmera padrão.', true);
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    currentStream = stream;
+                    video.srcObject = stream;
+                    modal.style.visibility = 'visible';
+                } catch (err2) {
+                    showToast('Não foi possível acessar nenhuma câmera.', true);
                 }
-            };
-            input.click();
+            }
         }
 
+        function closeCameraModal() {
+            const modal = document.getElementById('cameraModal');
+            const video = document.getElementById('cameraVideo');
+            if(currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+            video.srcObject = null;
+            modal.style.visibility = 'hidden';
+            pendingAreaId = null;
+            pendingAreaNome = null;
+        }
+
+        function capturePhoto() {
+            const video = document.getElementById('cameraVideo');
+            if(!video.videoWidth || !video.videoHeight) {
+                showToast('Aguardando imagem da câmera...', true);
+                return;
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            if(pendingAreaId && pendingAreaNome) {
+                processImageDataUrl(dataUrl, pendingAreaId, pendingAreaNome);
+                closeCameraModal();
+            } else {
+                closeCameraModal();
+            }
+        }
+
+        // ---------- GALERIA (FALLBACK) ----------
         function addNewPhotoFromGallery(areaId, areaNome) {
             const input = document.createElement('input');
             input.type = 'file';
@@ -215,18 +263,27 @@
             input.onchange = (e) => {
                 if(e.target.files && e.target.files[0]) {
                     showLoading(true);
-                    processImageFile(e.target.files[0], (dataUrl) => {
-                        showLoading(false);
-                        if(dataUrl) {
-                            const photoId = Date.now() + '-' + Math.random();
-                            const newPhoto = { id: photoId, dataUrl, markersIds: [] };
-                            if(!photos[areaId]) photos[areaId] = [];
-                            photos[areaId].push(newPhoto);
-                            saveAll();
-                            renderAngleArea(areaId, areaNome);
-                            showToast(`Foto carregada em ${areaNome}`);
+                    const file = e.target.files[0];
+                    const img = new Image();
+                    const url = URL.createObjectURL(file);
+                    img.onload = () => {
+                        URL.revokeObjectURL(url);
+                        let w = img.width, h = img.height;
+                        const maxSize = 1200;
+                        if(w > maxSize || h > maxSize) {
+                            if(w > h) { h = (h * maxSize) / w; w = maxSize; }
+                            else { w = (w * maxSize) / h; h = maxSize; }
                         }
-                    });
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w; canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, w, h);
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                        showLoading(false);
+                        processImageDataUrl(dataUrl, areaId, areaNome);
+                    };
+                    img.onerror = () => { showLoading(false); showToast('Erro ao carregar imagem', true); };
+                    img.src = url;
                 }
             };
             input.click();
@@ -245,7 +302,7 @@
             showToast(`Foto removida de ${areaNome}`);
         }
 
-        // ---------- GERENCIAMENTO DE MARCADORES ----------
+        // ---------- MARCADORES (DOUBLE-TAP) ----------
         function addMarkerToPhoto(areaId, areaNome, photoId, xPercent, yPercent, wrapperElement) {
             const newId = Date.now() + Math.random() * 1000;
             const number = getNextNumber();
@@ -286,16 +343,9 @@
             div.style.left = `${marker.x}%`;
             div.style.top = `${marker.y}%`;
             div.textContent = marker.number;
-
-            // UM TOQUE EXCLUSIVO PARA REMOVER (Evita disparar o container abaixo)
-            const removeHandler = (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                removeMarker(marker.id);
-            };
-            div.addEventListener('click', removeHandler);
-            div.addEventListener('touchstart', removeHandler, { passive: false });
-            
+            // UM TOQUE PARA REMOVER
+            div.addEventListener('click', (e) => { e.stopPropagation(); removeMarker(marker.id); });
+            div.addEventListener('touchstart', (e) => e.stopPropagation());
             wrapper.appendChild(div);
         }
 
@@ -320,7 +370,7 @@
         function updateCounter() { document.getElementById('counterBadge').textContent = allMarkers.length; }
         function escapeHtml(str) { return str?.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])) || ''; }
 
-        // ---------- RENDERIZAR AREAS DE ÂNGULOS ----------
+        // ---------- RENDERIZAR ÁREAS DE ÂNGULOS (com botão câmera traseira e galeria) ----------
         function renderAngleArea(areaId, areaNome) {
             let block = document.getElementById(`block-${areaId}`);
             if(!block) { block = document.createElement('div'); block.className = 'angle-block'; block.id = `block-${areaId}`; anglesContainer.appendChild(block); }
@@ -347,7 +397,8 @@
                 </div>
             `;
             
-            block.querySelector('.take-photo-btn')?.addEventListener('click', () => takePhotoWithBackCamera(areaId, areaNome));
+            // Eventos dos botões
+            block.querySelector('.take-photo-btn')?.addEventListener('click', () => openBackCamera(areaId, areaNome));
             block.querySelector('.add-photo-btn')?.addEventListener('click', () => addNewPhotoFromGallery(areaId, areaNome));
             
             if(hasPhotos) {
@@ -355,8 +406,6 @@
                     const wrapper = document.getElementById(`wrapper-${photo.id}`);
                     const img = wrapper.querySelector('.angle-img');
                     let lastTap = 0;
-                    
-                    // Tratamento unificado de click/click-duplo nativo sem conflito mobile
                     const doubleTapHandler = (e) => {
                         const now = Date.now();
                         if(now - lastTap < 300) {
@@ -374,7 +423,6 @@
                     };
                     img.addEventListener('click', doubleTapHandler);
                 });
-                
                 block.querySelectorAll('.delete-photo-btn').forEach(btn => {
                     btn.addEventListener('click', e => { e.stopPropagation(); deletePhoto(btn.dataset.area, btn.dataset.photo, areaNome); });
                 });
@@ -382,7 +430,7 @@
                 block.querySelector('.prev-btn')?.addEventListener('click', () => track.scrollBy({ left: -track.clientWidth*0.9, behavior: 'smooth' }));
                 block.querySelector('.next-btn')?.addEventListener('click', () => track.scrollBy({ left: track.clientWidth*0.9, behavior: 'smooth' }));
             }
-            
+            // Recarregar marcadores existentes
             photoList.forEach(photo => {
                 const wrapper = document.getElementById(`wrapper-${photo.id}`);
                 if(wrapper) allMarkers.filter(m => m.photoId === photo.id).forEach(m => createMarkerElement(m, wrapper));
@@ -405,15 +453,13 @@
         function setupMainArea() {
             const mainImg = document.getElementById('vehicleImage');
             const mainWrapper = document.getElementById('mainImageWrapper');
-            
+            // Clonar para evitar listeners antigos
             const newImg = mainImg.cloneNode(true);
             mainImg.parentNode.replaceChild(newImg, mainImg);
             const newWrapper = mainWrapper.cloneNode(true);
             mainWrapper.parentNode.replaceChild(newWrapper, mainWrapper);
-            
             const finalImg = document.getElementById('vehicleImage');
             const finalWrapper = document.getElementById('mainImageWrapper');
-            
             let lastTap = 0;
             const doubleTapHandler = (e) => {
                 const now = Date.now();
@@ -424,7 +470,6 @@
                     let x = ((e.clientX - rect.left)/rect.width)*100;
                     let y = ((e.clientY - rect.top)/rect.height)*100;
                     x = Math.min(100,Math.max(0,x)); y = Math.min(100,Math.max(0,y));
-                    
                     const newId = Date.now() + Math.random();
                     const number = getNextNumber();
                     const color = getColorForNumber(number);
@@ -442,7 +487,7 @@
             allMarkers.filter(m => m.photoId === 'main').forEach(m => createMarkerElement(m, finalWrapper));
         }
 
-        // ---------- MUDANÇA DE MODELO, LIMPEZA, EXPORTAÇÃO ----------
+        // ---------- MODELOS, LIMPEZA, EXPORTAÇÃO ----------
         function switchModel(modelId) {
             currentModel = modelId;
             const mainImg = document.getElementById('vehicleImage');
@@ -482,6 +527,9 @@
             switchModel(currentModel);
             document.getElementById('clearAllBtn').addEventListener('click', clearAll);
             document.getElementById('exportBtn').addEventListener('click', exportAll);
+            // Eventos do modal da câmera
+            document.getElementById('capturePhotoBtn').addEventListener('click', capturePhoto);
+            document.getElementById('closeCameraBtn').addEventListener('click', closeCameraModal);
         }
         window.addEventListener('load', init);
     })();
