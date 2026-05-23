@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>Checklist Automotivo - Múltiplas Áreas e PDF</title>
+    <!-- html2pdf CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -76,12 +77,46 @@
         }
         @media print {
             body { background: white; padding: 0; }
-            .header, .action-buttons, .model-selector, .carousel-btn, .photo-actions, .delete-marker-btn, .edit-title-btn, .delete-area-btn, .toast-message, .camera-modal, .loading-overlay, .take-photo-btn, .add-photo-btn { display: none !important; }
-            .image-block { break-inside: avoid !important; page-break-inside: avoid !important; border: 1px solid #e2e8f0 !important; box-shadow: none !important; margin-bottom: 24px !important; background: white !important; padding: 16px !important; }
-            .marker { display: flex !important; visibility: visible !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .observation-card { break-inside: avoid !important; page-break-inside: avoid !important; background: white !important; }
-            .carousel-track { overflow: visible !important; display: flex !important; flex-direction: column !important; gap: 16px !important; }
-            .photo-card { flex: none !important; max-width: 100% !important; width: 100% !important; margin-bottom: 16px !important; }
+            .header, .action-buttons, .model-selector, .carousel-btn, .photo-actions, .delete-marker-btn, .edit-title-btn, .delete-area-btn, .toast-message, .camera-modal, .loading-overlay { display: none; }
+            .image-block { break-inside: avoid; page-break-inside: avoid; border: none; box-shadow: none; margin-bottom: 20px; }
+            .marker { display: none; }
+            .observation-card { break-inside: avoid; }
+            .photo-card { flex: 0 0 100%; max-width: 100%; }
+            .carousel-track { overflow: visible; display: block; }
+            .photo-card { margin-bottom: 16px; }
+        }
+
+        /* ==========================
+           CORREÇÕES PDF
+        ========================== */
+        .photo-card,
+        .image-block,
+        .observation-card,
+        .image-container,
+        .photo-wrapper {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        .carousel-track {
+            overflow: visible !important;
+        }
+
+        img {
+            max-width: 100%;
+            display: block;
+        }
+
+        @media print {
+            body {
+                background: white !important;
+            }
+            .photo-card {
+                width: 100% !important;
+            }
+            .carousel-track {
+                display: block !important;
+            }
         }
     </style>
 </head>
@@ -100,6 +135,7 @@
         <div class="sub">⚠️ DOIS TOQUES na imagem para ADICIONAR marcador • UM TOQUE no marcador para REMOVER</div>
     </div>
 
+    <!-- IMAGEM PRINCIPAL (VISTA GERAL) -->
     <div class="main-area">
         <div class="image-block" id="mainBlock">
             <div class="block-header">
@@ -120,12 +156,14 @@
         <button id="clearAllBtn" class="btn-danger">🗑️ Limpar tudo</button>
     </div>
 
+    <!-- ÂNGULOS FIXOS E ÁREAS CUSTOMIZADAS SERÃO INSERIDAS AQUI -->
     <div id="dynamicAreas" class="custom-areas"></div>
 </div>
 
 <div id="toastMsg" class="toast-message">✅ Adicionado</div>
 <div id="loadingOverlay" class="loading-overlay">📸 Processando imagem...</div>
 
+<!-- Modal da câmera traseira -->
 <div id="cameraModal" class="camera-modal">
     <div class="camera-container">
         <video id="cameraVideo" class="camera-video" autoplay playsinline></video>
@@ -210,6 +248,7 @@
             saveAll();
         }
 
+        // Processamento de imagem (adicionar foto)
         function processImageDataUrl(dataUrl, areaId, areaNome) {
             const photoId = Date.now() + '-' + Math.random();
             const newPhoto = { id: photoId, dataUrl, markersIds: [] };
@@ -227,6 +266,7 @@
             return track ? track.scrollLeft : 0;
         }
 
+        // Câmera traseira
         async function openBackCamera(areaId, areaNome) {
             pendingAreaId = areaId;
             pendingAreaNome = areaNome;
@@ -270,6 +310,7 @@
             } else { closeCameraModal(); }
         }
 
+        // Galeria
         function addNewPhotoFromGallery(areaId, areaNome) {
             const input = document.createElement('input');
             input.type = 'file'; input.accept = 'image/*';
@@ -316,6 +357,7 @@
             showToast(`Foto removida de ${areaNome}`);
         }
 
+        // ---------- MARCADORES (DOUBLE-TAP sem recriar carrossel) ----------
         function addMarkerToPhoto(areaId, areaNome, photoId, xPercent, yPercent, wrapperElement) {
             const newId = Date.now() + Math.random() * 1000;
             const number = getNextNumber();
@@ -333,7 +375,7 @@
         function removeMarker(markerId) {
             const marker = allMarkers.find(m => m.id === markerId);
             if(!marker) return;
-            allMarkers = allMarkers.filter(m => !m.id || m.id !== markerId);
+            allMarkers = allMarkers.filter(m => m.id !== markerId);
             const photoObj = photos[marker.areaId]?.find(p => p.id === marker.photoId);
             if(photoObj) photoObj.markersIds = photoObj.markersIds.filter(id => id !== markerId);
             const el = document.getElementById(`marker-${markerId}`);
@@ -360,6 +402,7 @@
             wrapper.appendChild(div);
         }
 
+        // Renderiza a lista de observações de uma área (sem afetar carrossel)
         function renderMarkersList(areaId) {
             const container = document.getElementById(`markersList-${areaId}`);
             if(!container) return;
@@ -394,6 +437,7 @@
 
         function escapeHtml(str) { return str?.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])) || ''; }
 
+        // Renderiza apenas o carrossel de uma área (sem recriar o bloco inteiro)
         function renderAreaCarousel(areaId, areaNome, restoreScroll = 0) {
             const block = document.getElementById(`block-${areaId}`);
             if(!block) return;
@@ -447,12 +491,14 @@
                 if(prev) prev.addEventListener('click', () => track.scrollBy({ left: -track.clientWidth*0.9, behavior: 'smooth' }));
                 if(next) next.addEventListener('click', () => track.scrollBy({ left: track.clientWidth*0.9, behavior: 'smooth' }));
             }
+            // recriar marcadores já existentes nas fotos
             photoList.forEach(photo => {
                 const wrapper = document.getElementById(`wrapper-${photo.id}`);
                 if(wrapper) allMarkers.filter(m => m.photoId === photo.id).forEach(m => createMarkerElement(m, wrapper));
             });
         }
 
+        // Renderiza um bloco completo (header + carrossel + lista) - usado inicialmente e ao adicionar/remover áreas
         function renderAreaBlock(areaId, areaNome, isCustom = false) {
             let block = document.getElementById(`block-${areaId}`);
             if(!block) {
@@ -461,14 +507,16 @@
                 block.id = `block-${areaId}`;
                 document.getElementById('dynamicAreas').appendChild(block);
             }
+            const photoList = photos[areaId] || [];
+            const hasPhotos = photoList.length > 0;
             block.innerHTML = `
                 <div class="block-header">
                     <span class="block-title">${areaNome}</span>
                     <div>
                         ${isCustom ? `<button class="edit-title-btn" data-area="${areaId}">✏️</button>` : ''}
-                        <button class="take-photo-btn" data-area="${areaId}" data-nome="${areaNome}" style="margin-left:8px; background:#10b981; padding:4px 12px; color:white; border-radius:30px;">📷 Câmera</button>
-                        <button class="add-photo-btn" data-area="${areaId}" data-nome="${areaNome}" style="margin-left:4px; background:#3b82f6; padding:4px 12px; color:white; border-radius:30px;">🖼️ Galeria</button>
-                        ${isCustom ? `<button class="delete-area-btn" data-area="${areaId}" style="margin-left:4px; background:#ef4444; padding:4px 12px; color:white; border-radius:30px;">🗑️ Área</button>` : ''}
+                        <button class="take-photo-btn" data-area="${areaId}" data-nome="${areaNome}" style="margin-left:8px; background:#10b981; padding:4px 12px;">📷 Câmera</button>
+                        <button class="add-photo-btn" data-area="${areaId}" data-nome="${areaNome}" style="margin-left:4px; background:#3b82f6; padding:4px 12px;">🖼️ Galeria</button>
+                        ${isCustom ? `<button class="delete-area-btn" data-area="${areaId}" style="margin-left:4px; background:#ef4444; padding:4px 12px;">🗑️ Área</button>` : ''}
                     </div>
                 </div>
                 <div class="photos-carousel"></div>
@@ -491,6 +539,7 @@
             customAreas.forEach(area => renderAreaBlock(area.id, area.nome, true));
         }
 
+        // Área principal (vista geral)
         function setupMainArea() {
             const mainImg = document.getElementById('vehicleImage');
             const mainWrapper = document.getElementById('mainImageWrapper');
@@ -527,6 +576,7 @@
             renderMarkersList('main');
         }
 
+        // Áreas customizadas
         function addCustomArea() {
             const areaId = 'custom_' + Date.now();
             const areaNome = prompt('Nome da nova área (ex: Motor, Vazamento):', 'Nova área');
@@ -563,113 +613,122 @@
             showToast('Área removida');
         }
 
-        // ---------- GERAR PDF CORRIGIDO ----------
-        function generatePDF() {
-            const appContainer = document.querySelector('.app-container');
-            
-            // 1. Clonar elemento original
-            const element = appContainer.cloneNode(true);
-            
-            // 2. CORREÇÃO CRÍTICA: Mapear e injetar manualmente os textos digitados nos textareas originais
-            const originalTextareas = appContainer.querySelectorAll('.observation-input');
-            const clonedTextareas = element.querySelectorAll('.observation-input');
-            originalTextareas.forEach((ta, index) => {
-                if (clonedTextareas[index]) {
-                    const textVal = ta.value.trim() || "Nenhuma avaria observada.";
-                    const textDisplay = document.createElement('div');
-                    textDisplay.style.fontSize = '14px';
-                    textDisplay.style.lineHeight = '1.4';
-                    textDisplay.style.color = '#334155';
-                    textDisplay.style.padding = '8px 12px';
-                    textDisplay.style.background = '#f8fafc';
-                    textDisplay.style.borderRadius = '10px';
-                    textDisplay.style.border = '1px solid #e2e8f0';
-                    textDisplay.style.marginTop = '6px';
-                    textDisplay.style.whiteSpace = 'pre-wrap';
-                    textDisplay.innerText = textVal;
-                    
-                    clonedTextareas[index].parentNode.replaceChild(textDisplay, clonedTextareas[index]);
-                }
-            });
+        // ==========================
+        // GERAR PDF CORRIGIDO (async, aguarda imagens, sem overflow)
+        // ==========================
+        async function generatePDF() {
+            showToast('Preparando PDF...');
 
-            // 3. Remover botões móveis e elementos interativos do PDF
-            const removals = element.querySelectorAll(
-                '.carousel-btn, .photo-actions, .delete-marker-btn, .edit-title-btn, ' +
-                '.delete-area-btn, .action-buttons, .model-selector, .sub, ' +
-                '.toast-message, .camera-modal, .loading-overlay, .take-photo-btn, .add-photo-btn'
-            );
-            removals.forEach(el => el.remove());
+            // CLONA A APLICAÇÃO
+            const original = document.querySelector('.app-container');
+            const element = original.cloneNode(true);
 
-            // 4. Formatar blocos de imagens para evitar cortes e limpar placeholders vazios
-            element.querySelectorAll('.image-block').forEach(block => {
-                const emptyMarkerText = block.querySelector('.empty-markers');
-                if (emptyMarkerText) {
-                    emptyMarkerText.innerHTML = '✨ Nenhuma irregularidade registrada nesta região.';
-                    emptyMarkerText.style.padding = '10px';
-                    emptyMarkerText.style.color = '#64748b';
-                }
-                const placeholder = block.querySelector('.photo-placeholder');
-                if (placeholder && !block.querySelector('.angle-img')) {
-                    const carousel = block.querySelector('.photos-carousel');
-                    if (carousel) carousel.remove();
-                }
-                
-                block.style.pageBreakInside = 'avoid';
-                block.style.breakInside = 'avoid';
-                block.style.marginBottom = '20px';
-                block.style.padding = '16px';
-                block.style.border = '1px solid #e2e8f0';
-                block.style.borderRadius = '16px';
-                block.style.background = '#ffffff';
-            });
+            // CRIA CONTAINER TEMPORÁRIO FORA DA TELA
+            const tempContainer = document.createElement('div');
+            tempContainer.style.position = 'fixed';
+            tempContainer.style.left = '-99999px';
+            tempContainer.style.top = '0';
+            tempContainer.style.width = '1200px';
+            tempContainer.style.background = '#ffffff';
+            tempContainer.style.zIndex = '-1';
+            document.body.appendChild(tempContainer);
+            tempContainer.appendChild(element);
 
-            // 5. Expandir carrosséis de fotos para empilhamento vertical limpo no PDF
+            // REMOVE BOTÕES E CONTROLES QUE ATRAPALHAM
+            element.querySelectorAll(`
+                .carousel-btn,
+                .photo-actions button,
+                .delete-marker-btn,
+                .edit-title-btn,
+                .delete-area-btn,
+                .action-buttons,
+                .model-selector,
+                .sub,
+                .toast-message,
+                .camera-modal,
+                .loading-overlay
+            `).forEach(el => el.remove());
+
+            // AJUSTA CARROSSÉIS PARA FICAREM EMPILHADOS (EVITA OVERFLOW)
             element.querySelectorAll('.carousel-track').forEach(track => {
-                track.style.overflow = 'visible';
                 track.style.display = 'flex';
                 track.style.flexDirection = 'column';
-                track.style.gap = '12px';
+                track.style.overflow = 'visible';
+                track.style.width = '100%';
+                track.style.gap = '20px';
             });
 
+            // AJUSTA CADA CARD DE FOTO PARA OCUPAR 100% E EVITAR QUEBRAS
             element.querySelectorAll('.photo-card').forEach(card => {
-                card.style.flex = 'none';
                 card.style.width = '100%';
-                card.style.boxShadow = 'none';
-                card.style.border = '1px solid #e2e8f0';
-                card.style.borderRadius = '12px';
+                card.style.maxWidth = '100%';
+                card.style.flex = 'none';
+                card.style.breakInside = 'avoid';
+                card.style.pageBreakInside = 'avoid';
+                card.style.marginBottom = '20px';
             });
 
-            // 6. Fixar tamanho padrão de folha A4 no container clonado (impede achatamento do mobile)
-            element.style.width = '760px';
-            element.style.margin = '0 auto';
-            element.style.background = '#ffffff';
-            
-            // Configuração refinada do html2pdf
+            // BLOCO DE IMAGEM SEM QUEBRA
+            element.querySelectorAll('.image-block').forEach(block => {
+                block.style.breakInside = 'avoid';
+                block.style.pageBreakInside = 'avoid';
+                block.style.marginBottom = '30px';
+            });
+
+            // GARANTE QUE IMAGENS NÃO CORTEM
+            element.querySelectorAll('img').forEach(img => {
+                img.style.maxWidth = '100%';
+                img.style.display = 'block';
+                img.style.pageBreakInside = 'avoid';
+                img.crossOrigin = 'anonymous';
+            });
+
+            // ESPERA TODAS AS IMAGENS CARREGAREM (incluindo Imgur e fotos do usuário)
+            const images = element.querySelectorAll('img');
+            await Promise.all(
+                Array.from(images).map(img => {
+                    return new Promise(resolve => {
+                        if (img.complete) {
+                            resolve();
+                        } else {
+                            img.onload = resolve;
+                            img.onerror = resolve; // segue mesmo com erro
+                        }
+                    });
+                })
+            );
+
+            // CONFIGURAÇÕES DO PDF (margens, qualidade, etc.)
             const opt = {
-                margin: [0.4, 0.4, 0.4, 0.4],
-                filename: 'checklist_automotivo_relatorio.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { 
-                    scale: 2, 
-                    useCORS: true, 
-                    letterRendering: true,
-                    logging: false
+                margin: [8, 8, 8, 8],
+                filename: `checklist_${Date.now()}.pdf`,
+                image: { type: 'jpeg', quality: 1 },
+                html2canvas: {
+                    scale: 3,
+                    useCORS: true,
+                    allowTaint: true,
+                    logging: false,
+                    scrollX: 0,
+                    scrollY: 0,
+                    backgroundColor: '#ffffff'
                 },
-                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
-                pagebreak: { mode: ['css', 'legacy'] }
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
             };
 
-            showToast('Processando documento PDF...');
-            setTimeout(() => {
-                html2pdf().set(opt).from(element).save()
-                    .then(() => showToast('PDF gerado com sucesso!'))
-                    .catch(err => {
-                        console.error(err);
-                        showToast('Falha ao renderizar PDF', true);
-                    });
-            }, 150);
+            try {
+                await html2pdf().set(opt).from(element).save();
+                showToast('PDF gerado com sucesso!');
+            } catch (err) {
+                console.error(err);
+                showToast('Erro ao gerar PDF', true);
+            } finally {
+                // Remove o container temporário
+                document.body.removeChild(tempContainer);
+            }
         }
 
+        // Modelo, limpeza
         function switchModel(modelId) {
             currentModel = modelId;
             const mainImg = document.getElementById('vehicleImage');
