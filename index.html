@@ -85,39 +85,6 @@
             .carousel-track { overflow: visible; display: block; }
             .photo-card { margin-bottom: 16px; }
         }
-
-        /* ==========================
-           CORREÇÕES PDF
-        ========================== */
-        .photo-card,
-        .image-block,
-        .observation-card,
-        .image-container,
-        .photo-wrapper {
-            break-inside: avoid;
-            page-break-inside: avoid;
-        }
-
-        .carousel-track {
-            overflow: visible !important;
-        }
-
-        img {
-            max-width: 100%;
-            display: block;
-        }
-
-        @media print {
-            body {
-                background: white !important;
-            }
-            .photo-card {
-                width: 100% !important;
-            }
-            .carousel-track {
-                display: block !important;
-            }
-        }
     </style>
 </head>
 <body>
@@ -146,6 +113,7 @@
                     <img id="vehicleImage" src="https://i.imgur.com/kDPznwV.png" alt="Vista geral" style="width:100%">
                 </div>
             </div>
+            <!-- ID corrigido para corresponder ao padrão markersList-${areaId} -->
             <div id="markersList-main" class="markers-list"></div>
         </div>
     </div>
@@ -613,119 +581,30 @@
             showToast('Área removida');
         }
 
-        // ==========================
-        // GERAR PDF CORRIGIDO (async, aguarda imagens, sem overflow)
-        // ==========================
-        async function generatePDF() {
-            showToast('Preparando PDF...');
-
-            // CLONA A APLICAÇÃO
-            const original = document.querySelector('.app-container');
-            const element = original.cloneNode(true);
-
-            // CRIA CONTAINER TEMPORÁRIO FORA DA TELA
-            const tempContainer = document.createElement('div');
-            tempContainer.style.position = 'fixed';
-            tempContainer.style.left = '-99999px';
-            tempContainer.style.top = '0';
-            tempContainer.style.width = '1200px';
-            tempContainer.style.background = '#ffffff';
-            tempContainer.style.zIndex = '-1';
-            document.body.appendChild(tempContainer);
-            tempContainer.appendChild(element);
-
-            // REMOVE BOTÕES E CONTROLES QUE ATRAPALHAM
-            element.querySelectorAll(`
-                .carousel-btn,
-                .photo-actions button,
-                .delete-marker-btn,
-                .edit-title-btn,
-                .delete-area-btn,
-                .action-buttons,
-                .model-selector,
-                .sub,
-                .toast-message,
-                .camera-modal,
-                .loading-overlay
-            `).forEach(el => el.remove());
-
-            // AJUSTA CARROSSÉIS PARA FICAREM EMPILHADOS (EVITA OVERFLOW)
+        // Gerar PDF
+        function generatePDF() {
+            const element = document.querySelector('.app-container').cloneNode(true);
+            const removals = element.querySelectorAll('.carousel-btn, .photo-actions button, .delete-marker-btn, .edit-title-btn, .delete-area-btn, .action-buttons, .model-selector, .sub, .toast-message, .camera-modal, .loading-overlay');
+            removals.forEach(el => el.remove());
             element.querySelectorAll('.carousel-track').forEach(track => {
-                track.style.display = 'flex';
-                track.style.flexDirection = 'column';
                 track.style.overflow = 'visible';
-                track.style.width = '100%';
-                track.style.gap = '20px';
+                track.style.display = 'block';
             });
-
-            // AJUSTA CADA CARD DE FOTO PARA OCUPAR 100% E EVITAR QUEBRAS
             element.querySelectorAll('.photo-card').forEach(card => {
-                card.style.width = '100%';
-                card.style.maxWidth = '100%';
                 card.style.flex = 'none';
-                card.style.breakInside = 'avoid';
-                card.style.pageBreakInside = 'avoid';
-                card.style.marginBottom = '20px';
+                card.style.marginBottom = '16px';
             });
-
-            // BLOCO DE IMAGEM SEM QUEBRA
-            element.querySelectorAll('.image-block').forEach(block => {
-                block.style.breakInside = 'avoid';
-                block.style.pageBreakInside = 'avoid';
-                block.style.marginBottom = '30px';
-            });
-
-            // GARANTE QUE IMAGENS NÃO CORTEM
-            element.querySelectorAll('img').forEach(img => {
-                img.style.maxWidth = '100%';
-                img.style.display = 'block';
-                img.style.pageBreakInside = 'avoid';
-                img.crossOrigin = 'anonymous';
-            });
-
-            // ESPERA TODAS AS IMAGENS CARREGAREM (incluindo Imgur e fotos do usuário)
-            const images = element.querySelectorAll('img');
-            await Promise.all(
-                Array.from(images).map(img => {
-                    return new Promise(resolve => {
-                        if (img.complete) {
-                            resolve();
-                        } else {
-                            img.onload = resolve;
-                            img.onerror = resolve; // segue mesmo com erro
-                        }
-                    });
-                })
-            );
-
-            // CONFIGURAÇÕES DO PDF (margens, qualidade, etc.)
             const opt = {
-                margin: [8, 8, 8, 8],
-                filename: `checklist_${Date.now()}.pdf`,
-                image: { type: 'jpeg', quality: 1 },
-                html2canvas: {
-                    scale: 3,
-                    useCORS: true,
-                    allowTaint: true,
-                    logging: false,
-                    scrollX: 0,
-                    scrollY: 0,
-                    backgroundColor: '#ffffff'
-                },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+                margin: [0.5, 0.5, 0.5, 0.5],
+                filename: 'checklist_automotivo.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
             };
-
-            try {
-                await html2pdf().set(opt).from(element).save();
-                showToast('PDF gerado com sucesso!');
-            } catch (err) {
-                console.error(err);
-                showToast('Erro ao gerar PDF', true);
-            } finally {
-                // Remove o container temporário
-                document.body.removeChild(tempContainer);
-            }
+            showToast('Gerando PDF, aguarde...');
+            setTimeout(() => {
+                html2pdf().set(opt).from(element).save().then(() => showToast('PDF gerado com sucesso!'));
+            }, 100);
         }
 
         // Modelo, limpeza
