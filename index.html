@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Checklist Automotivo - Múltiplas Áreas e PDF</title>
+    <title>Checklist Automotivo - Múltiplas Áreas e PDF Melhorado</title>
     <!-- html2pdf CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
@@ -51,7 +51,6 @@
         .prev-btn { left: 8px; }
         .next-btn { right: 8px; }
         .markers-list { margin-top: 16px; background: #fafcff; border-radius: 20px; padding: 12px; }
-        .markers-list-title { font-weight: 600; margin-bottom: 8px; font-size: 0.9rem; color: #1e293b; }
         .observation-card { background: #ffffff; border-radius: 16px; padding: 12px; margin-bottom: 12px; border-left: 5px solid; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
         .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
         .color-badge { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 12px; }
@@ -74,16 +73,6 @@
             .model-icon { width: 40px; height: 40px; }
             .model-btn { min-width: 70px; padding: 6px 8px; }
             .block-header { flex-direction: column; align-items: flex-start; }
-        }
-        @media print {
-            body { background: white; padding: 0; }
-            .header, .action-buttons, .model-selector, .carousel-btn, .photo-actions, .delete-marker-btn, .edit-title-btn, .delete-area-btn, .toast-message, .camera-modal, .loading-overlay { display: none; }
-            .image-block { break-inside: avoid; page-break-inside: avoid; border: none; box-shadow: none; margin-bottom: 20px; }
-            .marker { display: none; }
-            .observation-card { break-inside: avoid; }
-            .photo-card { flex: 0 0 100%; max-width: 100%; }
-            .carousel-track { overflow: visible; display: block; }
-            .photo-card { margin-bottom: 16px; }
         }
     </style>
 </head>
@@ -113,7 +102,6 @@
                     <img id="vehicleImage" src="https://i.imgur.com/kDPznwV.png" alt="Vista geral" style="width:100%">
                 </div>
             </div>
-            <!-- ID corrigido para corresponder ao padrão markersList-${areaId} -->
             <div id="markersList-main" class="markers-list"></div>
         </div>
     </div>
@@ -124,14 +112,12 @@
         <button id="clearAllBtn" class="btn-danger">🗑️ Limpar tudo</button>
     </div>
 
-    <!-- ÂNGULOS FIXOS E ÁREAS CUSTOMIZADAS SERÃO INSERIDAS AQUI -->
     <div id="dynamicAreas" class="custom-areas"></div>
 </div>
 
 <div id="toastMsg" class="toast-message">✅ Adicionado</div>
 <div id="loadingOverlay" class="loading-overlay">📸 Processando imagem...</div>
 
-<!-- Modal da câmera traseira -->
 <div id="cameraModal" class="camera-modal">
     <div class="camera-container">
         <video id="cameraVideo" class="camera-video" autoplay playsinline></video>
@@ -163,7 +149,7 @@
             { id: 'painel', nome: '📊 Painel' },
             { id: 'interna', nome: '🪑 Interna (Bancos)' }
         ];
-        let customAreas = []; // { id, nome }
+        let customAreas = [];
 
         const modelImages = {
             suv: 'https://i.imgur.com/2PGFGkF.png',
@@ -216,7 +202,6 @@
             saveAll();
         }
 
-        // Processamento de imagem (adicionar foto)
         function processImageDataUrl(dataUrl, areaId, areaNome) {
             const photoId = Date.now() + '-' + Math.random();
             const newPhoto = { id: photoId, dataUrl, markersIds: [] };
@@ -234,7 +219,6 @@
             return track ? track.scrollLeft : 0;
         }
 
-        // Câmera traseira
         async function openBackCamera(areaId, areaNome) {
             pendingAreaId = areaId;
             pendingAreaNome = areaNome;
@@ -278,7 +262,6 @@
             } else { closeCameraModal(); }
         }
 
-        // Galeria
         function addNewPhotoFromGallery(areaId, areaNome) {
             const input = document.createElement('input');
             input.type = 'file'; input.accept = 'image/*';
@@ -325,7 +308,7 @@
             showToast(`Foto removida de ${areaNome}`);
         }
 
-        // ---------- MARCADORES (DOUBLE-TAP sem recriar carrossel) ----------
+        // ---------- MARCADORES (DOUBLE-TAP) ----------
         function addMarkerToPhoto(areaId, areaNome, photoId, xPercent, yPercent, wrapperElement) {
             const newId = Date.now() + Math.random() * 1000;
             const number = getNextNumber();
@@ -370,7 +353,6 @@
             wrapper.appendChild(div);
         }
 
-        // Renderiza a lista de observações de uma área (sem afetar carrossel)
         function renderMarkersList(areaId) {
             const container = document.getElementById(`markersList-${areaId}`);
             if(!container) return;
@@ -405,7 +387,6 @@
 
         function escapeHtml(str) { return str?.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])) || ''; }
 
-        // Renderiza apenas o carrossel de uma área (sem recriar o bloco inteiro)
         function renderAreaCarousel(areaId, areaNome, restoreScroll = 0) {
             const block = document.getElementById(`block-${areaId}`);
             if(!block) return;
@@ -427,7 +408,6 @@
             `;
             const newTrack = document.getElementById(`track-${areaId}`);
             if(newTrack && savedScroll) newTrack.scrollLeft = savedScroll;
-            
             if(hasPhotos) {
                 photoList.forEach(photo => {
                     const wrapper = document.getElementById(`wrapper-${photo.id}`);
@@ -459,14 +439,12 @@
                 if(prev) prev.addEventListener('click', () => track.scrollBy({ left: -track.clientWidth*0.9, behavior: 'smooth' }));
                 if(next) next.addEventListener('click', () => track.scrollBy({ left: track.clientWidth*0.9, behavior: 'smooth' }));
             }
-            // recriar marcadores já existentes nas fotos
             photoList.forEach(photo => {
                 const wrapper = document.getElementById(`wrapper-${photo.id}`);
                 if(wrapper) allMarkers.filter(m => m.photoId === photo.id).forEach(m => createMarkerElement(m, wrapper));
             });
         }
 
-        // Renderiza um bloco completo (header + carrossel + lista) - usado inicialmente e ao adicionar/remover áreas
         function renderAreaBlock(areaId, areaNome, isCustom = false) {
             let block = document.getElementById(`block-${areaId}`);
             if(!block) {
@@ -475,8 +453,6 @@
                 block.id = `block-${areaId}`;
                 document.getElementById('dynamicAreas').appendChild(block);
             }
-            const photoList = photos[areaId] || [];
-            const hasPhotos = photoList.length > 0;
             block.innerHTML = `
                 <div class="block-header">
                     <span class="block-title">${areaNome}</span>
@@ -507,7 +483,6 @@
             customAreas.forEach(area => renderAreaBlock(area.id, area.nome, true));
         }
 
-        // Área principal (vista geral)
         function setupMainArea() {
             const mainImg = document.getElementById('vehicleImage');
             const mainWrapper = document.getElementById('mainImageWrapper');
@@ -544,7 +519,6 @@
             renderMarkersList('main');
         }
 
-        // Áreas customizadas
         function addCustomArea() {
             const areaId = 'custom_' + Date.now();
             const areaNome = prompt('Nome da nova área (ex: Motor, Vazamento):', 'Nova área');
@@ -581,30 +555,164 @@
             showToast('Área removida');
         }
 
-        // Gerar PDF
-        function generatePDF() {
-            const element = document.querySelector('.app-container').cloneNode(true);
-            const removals = element.querySelectorAll('.carousel-btn, .photo-actions button, .delete-marker-btn, .edit-title-btn, .delete-area-btn, .action-buttons, .model-selector, .sub, .toast-message, .camera-modal, .loading-overlay');
-            removals.forEach(el => el.remove());
-            element.querySelectorAll('.carousel-track').forEach(track => {
-                track.style.overflow = 'visible';
-                track.style.display = 'block';
-            });
-            element.querySelectorAll('.photo-card').forEach(card => {
-                card.style.flex = 'none';
-                card.style.marginBottom = '16px';
-            });
+        // ---------- PDF MELHORADO ----------
+        async function generatePDF() {
+            showToast('Preparando PDF...');
+            // Criar um elemento div para o relatório
+            const reportDiv = document.createElement('div');
+            reportDiv.style.fontFamily = 'system-ui, sans-serif';
+            reportDiv.style.padding = '20px';
+            reportDiv.style.backgroundColor = 'white';
+            reportDiv.style.maxWidth = '800px';
+            reportDiv.style.margin = '0 auto';
+            
+            // Cabeçalho do relatório
+            const title = document.createElement('h1');
+            title.textContent = '🔧 Checklist Automotivo';
+            title.style.textAlign = 'center';
+            title.style.marginBottom = '20px';
+            reportDiv.appendChild(title);
+            
+            // Data
+            const date = new Date();
+            const dateStr = date.toLocaleString();
+            const dateP = document.createElement('p');
+            dateP.textContent = `Data: ${dateStr}`;
+            dateP.style.textAlign = 'center';
+            dateP.style.marginBottom = '30px';
+            dateP.style.color = '#666';
+            reportDiv.appendChild(dateP);
+            
+            // Função para adicionar uma área
+            const addAreaToReport = (areaId, areaNome) => {
+                const areaPhotos = photos[areaId] || [];
+                const areaMarkers = allMarkers.filter(m => m.areaId === areaId);
+                if (areaPhotos.length === 0 && areaMarkers.length === 0) return;
+                
+                const areaDiv = document.createElement('div');
+                areaDiv.style.marginBottom = '40px';
+                areaDiv.style.pageBreakInside = 'avoid';
+                areaDiv.style.borderTop = '2px solid #3b82f6';
+                areaDiv.style.paddingTop = '20px';
+                
+                const areaTitle = document.createElement('h2');
+                areaTitle.textContent = areaNome;
+                areaTitle.style.backgroundColor = '#e2e8f0';
+                areaTitle.style.display = 'inline-block';
+                areaTitle.style.padding = '6px 16px';
+                areaTitle.style.borderRadius = '30px';
+                areaTitle.style.fontSize = '1.3rem';
+                areaDiv.appendChild(areaTitle);
+                
+                // Para cada foto, exibir a imagem e seus marcadores/observações
+                if (areaPhotos.length > 0) {
+                    areaPhotos.forEach((photo, idx) => {
+                        const photoDiv = document.createElement('div');
+                        photoDiv.style.marginTop = '20px';
+                        photoDiv.style.marginBottom = '30px';
+                        photoDiv.style.border = '1px solid #cbd5e1';
+                        photoDiv.style.borderRadius = '16px';
+                        photoDiv.style.padding = '12px';
+                        photoDiv.style.backgroundColor = '#f8fafc';
+                        photoDiv.style.pageBreakInside = 'avoid';
+                        
+                        // Imagem
+                        const img = document.createElement('img');
+                        img.src = photo.dataUrl;
+                        img.style.width = '100%';
+                        img.style.height = 'auto';
+                        img.style.borderRadius = '12px';
+                        img.style.border = '1px solid #e2e8f0';
+                        photoDiv.appendChild(img);
+                        
+                        // Marcadores/observações relacionados a esta foto
+                        const photoMarkers = allMarkers.filter(m => m.photoId === photo.id);
+                        if (photoMarkers.length > 0) {
+                            const markersDiv = document.createElement('div');
+                            markersDiv.style.marginTop = '16px';
+                            markersDiv.innerHTML = '<strong style="display:block; margin-bottom:8px;">📝 Pontos de inspeção nesta imagem:</strong>';
+                            photoMarkers.forEach(m => {
+                                const markerItem = document.createElement('div');
+                                markerItem.style.backgroundColor = 'white';
+                                markerItem.style.borderLeft = `5px solid ${m.color}`;
+                                markerItem.style.borderRadius = '8px';
+                                markerItem.style.padding = '10px';
+                                markerItem.style.marginBottom = '8px';
+                                markerItem.innerHTML = `
+                                    <div><strong style="color:${m.color};">Ponto #${m.number}</strong> (posição: ${Math.round(m.x)}%, ${Math.round(m.y)}%)</div>
+                                    <div style="margin-top:6px;"><em>Observação:</em> ${escapeHtml(m.note) || '<span style="color:#94a3b8;">(nenhuma observação)</span>'}</div>
+                                `;
+                                markersDiv.appendChild(markerItem);
+                            });
+                            photoDiv.appendChild(markersDiv);
+                        } else {
+                            const noMarkers = document.createElement('p');
+                            noMarkers.textContent = '✨ Nenhum marcador adicionado nesta foto.';
+                            noMarkers.style.color = '#64748b';
+                            noMarkers.style.marginTop = '12px';
+                            noMarkers.style.fontSize = '0.85rem';
+                            photoDiv.appendChild(noMarkers);
+                        }
+                        areaDiv.appendChild(photoDiv);
+                    });
+                } else {
+                    // Sem fotos, mas pode ter marcadores na área principal (sem foto)
+                    if (areaMarkers.length > 0) {
+                        const noPhotoDiv = document.createElement('div');
+                        noPhotoDiv.style.marginTop = '20px';
+                        noPhotoDiv.style.border = '1px solid #cbd5e1';
+                        noPhotoDiv.style.borderRadius = '16px';
+                        noPhotoDiv.style.padding = '12px';
+                        noPhotoDiv.innerHTML = '<strong>⚠️ Observações sem foto associada:</strong>';
+                        areaMarkers.forEach(m => {
+                            const markerItem = document.createElement('div');
+                            markerItem.style.backgroundColor = 'white';
+                            markerItem.style.borderLeft = `5px solid ${m.color}`;
+                            markerItem.style.borderRadius = '8px';
+                            markerItem.style.padding = '8px';
+                            markerItem.style.marginTop = '8px';
+                            markerItem.innerHTML = `<strong>Ponto #${m.number}</strong> - ${escapeHtml(m.note) || 'Sem observação'}`;
+                            noPhotoDiv.appendChild(markerItem);
+                        });
+                        areaDiv.appendChild(noPhotoDiv);
+                    } else {
+                        const emptyMsg = document.createElement('p');
+                        emptyMsg.textContent = 'Nenhuma foto ou observação registrada.';
+                        emptyMsg.style.color = '#94a3b8';
+                        emptyMsg.style.fontStyle = 'italic';
+                        areaDiv.appendChild(emptyMsg);
+                    }
+                }
+                reportDiv.appendChild(areaDiv);
+            };
+            
+            // Adicionar área principal (Vista Geral)
+            addAreaToReport('main', '📍 Vista Geral');
+            // Adicionar áreas fixas
+            for (const area of fixedAreas) {
+                addAreaToReport(area.id, area.nome);
+            }
+            // Adicionar áreas customizadas
+            for (const area of customAreas) {
+                addAreaToReport(area.id, area.nome);
+            }
+            
+            // Configuração do PDF
             const opt = {
                 margin: [0.5, 0.5, 0.5, 0.5],
-                filename: 'checklist_automotivo.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
+                filename: `checklist_${date.toISOString().slice(0,19).replace(/:/g, '-')}.pdf`,
+                image: { type: 'jpeg', quality: 0.95 },
                 html2canvas: { scale: 2, useCORS: true, letterRendering: true },
                 jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
             };
-            showToast('Gerando PDF, aguarde...');
-            setTimeout(() => {
-                html2pdf().set(opt).from(element).save().then(() => showToast('PDF gerado com sucesso!'));
-            }, 100);
+            
+            // Gerar PDF
+            html2pdf().set(opt).from(reportDiv).save().then(() => {
+                showToast('PDF gerado com sucesso!');
+            }).catch(err => {
+                console.error(err);
+                showToast('Erro ao gerar PDF', true);
+            });
         }
 
         // Modelo, limpeza
